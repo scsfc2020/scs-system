@@ -220,11 +220,6 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
     <div class="fg" style="margin-bottom:12px"><label class="fl">出生年月日</label><input class="fi" id="p-bday" type="date"></div>
     <button class="btn-p" onclick="parentLogin()">家長登入</button>
     <div class="err-msg" id="p-err">查無此學生，請確認姓名與生日</div>
-    <div style="margin-top:14px;padding:10px;background:var(--g0);border-radius:var(--rmd);font-size:11px;color:var(--g4);text-align:center">
-      Demo 快速登入：
-      <span onclick="pQuick('張鈞傑','2015-06-12')" style="color:var(--nv);cursor:pointer;text-decoration:underline">張鈞傑</span>　
-      <span onclick="pQuick('甯柏安','2019-03-08')" style="color:var(--nv);cursor:pointer;text-decoration:underline">甯柏安</span>
-    </div>
   </div>
 </div>
 </div>
@@ -765,7 +760,7 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
 
 </div><!-- .app -->
 <script>
-var APPS_SCRIPT_URL='https://docs.google.com/spreadsheets/d/1t3EcUoMctzRpfMo_WWvzA2M_2qGkbfQNn9sKxIBUEF8/edit';
+var APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbz_yrx7GEV61efUwWsET8UiGsjWG8Rvex8Shgx_sV6179tdJa5a5cNyMVAYIdpG23kZSw/exec';
 var DEFAULT_PWD='scsfc2020';
 var pendingRole=null,curParent=null;
 var waiState={};
@@ -902,6 +897,21 @@ function updateWai(){
   el=document.getElementById('wai-sum');if(el)el.innerHTML='已填 <strong>'+vals.length+'/5</strong> 人・出席 '+pre+'　請假/缺席 '+abs+'　其他 '+oth;
 }
 function waiSubmit(){
+  if(APPS_SCRIPT_URL){
+    var records=[];
+    Object.keys(waiState).forEach(function(name){
+      var stMap={p:'出席',k:'請假',a:'缺席',o:'其他'};
+      var ni=document.getElementById('wn-'+name);
+      records.push({name:name,status:stMap[waiState[name]]||waiState[name],note:ni?ni.value:''});
+    });
+    callAPI({
+      action:'submitAttendance',
+      lessonDate:new Date().toISOString().slice(0,10),
+      cls:'北大週六國小 15:30-17:00',
+      coach:'楊鈞崴（崴崴）',
+      records:records
+    },function(){});
+  }
   var sa=document.getElementById('wai-submit-area');if(sa)sa.style.display='none';
   var done=document.getElementById('wai-done');if(done)done.style.display='block';
   var pre=Object.values(waiState).filter(function(v){return v==='p'}).length+2;
@@ -1049,6 +1059,9 @@ function closeOrder(){
 function chkAccFive(){var inp=document.getElementById('acc-five');if(!inp)return;inp.value=inp.value.replace(/\D/g,'');var btn=document.getElementById('acc-pay-btn');if(btn)btn.disabled=inp.value.length!==5;}
 function doAccPayNotify(){
   var five=document.getElementById('acc-five')?document.getElementById('acc-five').value:'';
+  if(APPS_SCRIPT_URL){
+    callAPI({action:'accPayNotify',studentName:curParent||'',fiveDigits:five,total:0},function(){});
+  }
   var form=document.getElementById('acc-pay-form');if(form)form.style.display='none';
   var ok=document.getElementById('acc-pay-ok');if(ok)ok.style.display='block';
 }
@@ -1149,20 +1162,94 @@ function updateTotal(){
   var form=document.getElementById('acc-order-form');if(form)form.style.display=total>0?'block':'none';
 }
 function submitOrder(){
-  var ok=document.getElementById('acc-ok');if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none'},3000)}
+  if(!APPS_SCRIPT_URL){
+    var ok=document.getElementById('acc-ok');if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none'},3000);}
+    return;
+  }
+  var items=[];
+  Object.keys(accQty).forEach(function(idx){
+    if(accQty[idx]>0)items.push({name:ACCESSORIES[idx].name,price:ACCESSORIES[idx].price,qty:accQty[idx]});
+  });
+  if(items.length===0){alert('請選擇至少一項配件');return;}
+  var total=items.reduce(function(s,i){return s+i.price*i.qty},0);
+  callAPI({
+    action:'submitOrder',
+    buyer:document.getElementById('acc-buyer').value||'',
+    studentName:curParent||'',
+    phone:document.getElementById('acc-phone').value||'',
+    items:items, total:total,
+    note:document.getElementById('acc-note').value||''
+  }, function(result){
+    var ok=document.getElementById('acc-ok');
+    if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none'},3000);}
+  });
 }
 
 // 家長登入
+// ── API 呼叫工具 ──────────────────────────────────────────────
+function callAPI(data, callback) {
+  if (!APPS_SCRIPT_URL) {
+    // 沒有填 URL，使用 Demo 資料
+    callback(null);
+    return;
+  }
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(result){ callback(result); })
+  .catch(function(err){
+    console.error('API Error:', err);
+    callback(null);
+  });
+}
+
+function showLoading(msg) {
+  var el = document.getElementById('p-err');
+  if (el) { el.style.display='block'; el.style.color='var(--g4)'; el.textContent = msg || '載入中...'; }
+}
+function hideLoading() {
+  var el = document.getElementById('p-err');
+  if (el) { el.style.display='none'; el.style.color='var(--rd)'; }
+}
+
 function parentLogin(){
   var name=(document.getElementById('p-name').value||'').trim();
   var bday=document.getElementById('p-bday').value;
   var err=document.getElementById('p-err');
-  var s=PARENT_DB[name];
-  if(!s||s.bday!==bday){if(err)err.style.display='block';return;}
-  if(err)err.style.display='none';
-  curParent=name;loadParent(name);show('s-parent');
+  if(!name||!bday){if(err){err.style.display='block';err.textContent='請輸入姓名與生日';}return;}
+
+  // 有 API URL → 從試算表驗證
+  if(APPS_SCRIPT_URL){
+    showLoading('驗證中...');
+    callAPI({action:'getStudentInfo',name:name,bday:bday}, function(result){
+      hideLoading();
+      if(!result||!result.ok){
+        if(err){err.style.display='block';err.style.color='var(--rd)';err.textContent='查無此學生，請確認姓名與生日';}
+        return;
+      }
+      if(err)err.style.display='none';
+      curParent=name;
+      loadParentFromAPI(result.student);
+      show('s-parent');
+    });
+  } else {
+    // Demo 模式：用本地資料
+    var s=PARENT_DB[name];
+    if(!s||s.bday!==bday){if(err){err.style.display='block';err.style.color='var(--rd)';err.textContent='查無此學生，請確認姓名與生日';}return;}
+    if(err)err.style.display='none';
+    curParent=name;loadParent(name);show('s-parent');
+  }
 }
-function pQuick(n,b){var pn=document.getElementById('p-name');var pb=document.getElementById('p-bday');if(pn)pn.value=n;if(pb)pb.value=b;parentLogin();}
+
+function loadParentFromAPI(s) {
+  // s 是從 API 回傳的學生資料，格式和 PARENT_DB 相同
+  var name = s.name;
+  // 暫時存入 PARENT_DB 讓 loadParent 使用
+  PARENT_DB[name] = s;
+  loadParent(name);
+}
 
 function loadParent(name){
   var s=PARENT_DB[name];var el;
@@ -1213,12 +1300,32 @@ function loadParent(name){
 }
 
 function chkFive(){var inp=document.getElementById('p-five');if(!inp)return;inp.value=inp.value.replace(/\D/g,'');var btn=document.getElementById('p-pay-btn');if(btn)btn.disabled=inp.value.length!==5;}
-function doPayNotify(){var pok=document.getElementById('p-pay-ok');if(pok)pok.style.display='block';var pf=document.getElementById('p-pay-form');if(pf)pf.style.display='none';}
+function doPayNotify(){
+  var five=document.getElementById('p-five')?document.getElementById('p-five').value:'';
+  var amt=document.getElementById('p-fee-amt')?document.getElementById('p-fee-amt').textContent.replace('$','').replace(',',''):'';
+  if(APPS_SCRIPT_URL){
+    callAPI({action:'payNotify',studentName:curParent||'',fiveDigits:five,amount:amt},function(){});
+  }
+  var pok=document.getElementById('p-pay-ok');if(pok)pok.style.display='block';
+  var pf=document.getElementById('p-pay-form');if(pf)pf.style.display='none';
+}
 function paReason(){var v=document.getElementById('pa-reason').value;var w=document.getElementById('pa-other-wrap');if(w)w.style.display=v==='其他'?'block':'none';}
 function doAbsence(){
   var date=document.getElementById('pa-date')?document.getElementById('pa-date').value:'';
   var reason=document.getElementById('pa-reason')?document.getElementById('pa-reason').value:'';
   if(!date||!reason){alert('請填寫日期與原因');return;}
+  if(APPS_SCRIPT_URL&&curParent){
+    var s=PARENT_DB[curParent];
+    callAPI({
+      action:'submitAbsence',
+      studentName:curParent,
+      cls:s?s.cls:'',
+      absenceDate:date,
+      reason:reason,
+      makeupWish:document.getElementById('pa-reason')?'希望安排補課':'',
+      source:'家長'
+    },function(){});
+  }
   var ok=document.getElementById('pa-ok');if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none'},3000);}
   var pad=document.getElementById('pa-date');if(pad)pad.valueAsDate=new Date();
   var par=document.getElementById('pa-reason');if(par)par.value='';
