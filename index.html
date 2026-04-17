@@ -857,7 +857,7 @@ function aTab(btn,id){
   document.querySelectorAll('#s-admin .nb').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');
   ['a-dash','a-match','a-match-edit','a-jersey','a-acc-admin','a-absence','a-hours'].forEach(function(x){var el=document.getElementById(x);if(el)el.style.display='none'});
   var t=document.getElementById(id);if(t)t.style.display='block';
-  // 切回配件頁時顯示列表，隱藏詳情
+  if(id==='a-match'){loadMatchList();}
   if(id==='a-acc-admin'){
     var l=document.getElementById('acc-admin-list');if(l)l.style.display='block';
     var d=document.getElementById('acc-admin-detail');if(d)d.style.display='none';
@@ -918,11 +918,8 @@ function waiSubmit(){
   var txt=document.getElementById('wai-done-txt');if(txt)txt.textContent='出席 '+pre+' 人 · 資料已同步行政後台';
 }
 
-// 比賽資料（demo）
-var MATCHES=[
-  {seq:'A-052',group:'U10',date:'2026-04-20',rule:'八人制',gather:'08:30',kickoff:'09:00',opp:'海山國小',venue:'板橋國民運動中心',map:'https://maps.google.com',jersey:'黑色',coach:'楊鈞崴（崴崴）',players:['張鈞傑','黃浚宸','陳祈睿','林昱廷','廖翊軒','蔡夏恩','黃浚禕']},
-  {seq:'B-089',group:'U8',date:'2026-04-27',rule:'五人制',gather:'08:00',kickoff:'09:00',opp:'ZYES',venue:'新北市立乙場',map:'https://maps.google.com',jersey:'黑色',coach:'楊鈞隆（隆隆）',players:['吳振曦','林祐生','李品謙','陳允鑠','林羿斈']}
-];
+// 比賽資料（從試算表讀取，初始為空）
+var MATCHES=[];
 var editingMatchIdx=null;
 
 function openMatchEdit(idx){
@@ -961,13 +958,20 @@ function saveMatchEdit(){
   m.kickoff=document.getElementById('me-kickoff').value||m.kickoff;
   m.opp=document.getElementById('me-opp').value||m.opp;
   m.venue=document.getElementById('me-venue').value||m.venue;
-  m.map=document.getElementById('me-map').value||m.map;
+  m.map=document.getElementById('me-map').value||m.map||'';
   m.group=document.getElementById('me-group').value;
   m.rule=document.getElementById('me-rule').value;
   m.jersey=document.getElementById('me-jersey').value;
   m.coach=document.getElementById('me-coach').value;
   m.players=[];
   document.querySelectorAll('#me-players .chip.sel').forEach(function(c){m.players.push(c.textContent);});
+  if(APPS_SCRIPT_URL){
+    callAPI({action:'updateMatch',seq:m.seq,group:m.group,date:m.date,rule:m.rule,
+      gather:m.gather,kickoff:m.kickoff,opp:m.opp,venue:m.venue,mapUrl:m.map||'',
+      jersey:m.jersey,coach:m.coach,players:m.players},function(){
+      loadMatchList();
+    });
+  }
   var ok=document.getElementById('me-ok');if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none';},2500);}
 }
 
@@ -1069,7 +1073,72 @@ function doAccPayNotify(){
 
 
 function toggleChip(el){el.classList.toggle('sel')}
-function saveMatch(){var ok=document.getElementById('m-ok');if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none'},3000)}}
+
+function saveMatch(){
+  var seq=document.getElementById('m-seq').value;
+  var opp=document.getElementById('m-opp').value;
+  var venue=document.getElementById('m-venue').value;
+  if(!seq||!opp){alert('請填寫場次編號與對手名稱');return;}
+  var players=[];
+  document.querySelectorAll('#m-players .chip.sel').forEach(function(c){players.push(c.textContent);});
+  var matchData={
+    action:'saveMatch',
+    seq:seq,
+    group:document.getElementById('m-group').value,
+    date:document.getElementById('m-date').value,
+    rule:document.getElementById('m-rule').value,
+    gather:document.getElementById('m-gather').value,
+    kickoff:document.getElementById('m-kickoff').value,
+    opp:opp,
+    venue:venue,
+    mapUrl:document.getElementById('m-map').value||'',
+    jersey:document.getElementById('m-jersey').value,
+    coach:document.getElementById('m-coach').value,
+    players:players
+  };
+  if(APPS_SCRIPT_URL){
+    callAPI(matchData,function(result){
+      var ok=document.getElementById('m-ok');
+      if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none'},3000);}
+      loadMatchList(); // 重新載入列表
+    });
+  } else {
+    // Demo 模式
+    MATCHES.push(matchData);
+    renderMatchList();
+    var ok=document.getElementById('m-ok');
+    if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none'},3000);}
+  }
+}
+
+// 從試算表載入比賽列表
+function loadMatchList(){
+  if(!APPS_SCRIPT_URL){renderMatchList();return;}
+  callAPI({action:'getMatches'},function(result){
+    if(result&&result.ok){
+      MATCHES=result.matches||[];
+    }
+    renderMatchList();
+  });
+}
+
+// 渲染已設定比賽列表
+function renderMatchList(){
+  var list=document.getElementById('match-list-admin');
+  if(!list)return;
+  if(MATCHES.length===0){
+    list.innerHTML='<p style="font-size:13px;color:var(--g4);padding:10px 0;text-align:center">尚無比賽資料</p>';
+    return;
+  }
+  list.innerHTML=MATCHES.map(function(m,i){
+    return '<div class="row" style="cursor:pointer" onclick="openMatchEdit('+i+')">'
+      +'<div class="av" style="background:#E6F1FB;color:var(--nv2)">'+m.group+'</div>'
+      +'<div class="ri"><div class="rn">'+m.seq+' vs '+m.opp+'</div>'
+      +'<div class="rm">'+m.date+'・'+m.gather+'集合・'+m.kickoff+'・'+m.rule+'・'+m.coach+'</div></div>'
+      +'<span style="font-size:11px;color:var(--nv);font-weight:600;flex-shrink:0">編輯 ›</span>'
+      +'</div>';
+  }).join('');
+}
 
 // 球衣號碼
 function buildJerseyGrid(selectedStudent,currentNum){
@@ -1287,12 +1356,33 @@ function loadParent(name){
   // 請假
   var abl=document.getElementById('p-abs-list');
   if(abl)abl.innerHTML=s.absLog.length?s.absLog.map(function(a){return '<div class="hist-row"><div><div style="font-size:13px;font-weight:600">'+a.d+' · '+a.r+'</div><div style="font-size:11px;color:var(--g4);margin-top:2px">'+a.m+'</div></div><span class="badge '+(a.ok?'b-ok':'b-am')+'">'+(a.ok?'已確認':'待確認')+'</span></div>';}).join(''):'<p style="font-size:13px;color:var(--g4);padding:8px 0">尚無請假紀錄</p>';
-  // 比賽
+  // 比賽（含加入行事曆按鈕）
   var ml=document.getElementById('p-match-list');
   var nm=document.getElementById('p-no-match');
   if(ml&&s.matches){
     if(s.matches.length===0){if(ml)ml.innerHTML='';if(nm)nm.style.display='block';}
-    else{if(nm)nm.style.display='none';ml.innerHTML=s.matches.map(function(m){return '<div class="match-card"><div class="match-hd"><div class="match-date">'+m.date+' <span class="badge b-nv" style="margin-left:4px">'+m.group+'・'+m.rule+'</span></div><div class="match-vs">SCS vs '+m.opp+'</div><div class="match-meta"><span class="badge b-am">場次 '+m.seq+'</span> <span class="badge b-gray">'+m.jersey+'球衣</span></div></div><div class="match-body"><div class="match-info-row"><span>集合時間</span><span>'+m.gather+'</span></div><div class="match-info-row"><span>比賽時間</span><span>'+m.kickoff+'</span></div><div class="match-info-row"><span>地點</span><span>'+m.venue+'</span></div><div class="match-info-row"><span>帶隊教練</span><span>'+m.coach+'</span></div><a class="map-link" href="'+m.mapUrl+'" target="_blank"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--nv);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>開啟地圖導航</a></div></div>';}).join('');}
+    else{
+      if(nm)nm.style.display='none';
+      ml.innerHTML=s.matches.map(function(m){
+        var calUrl='';
+        if(m.date){
+          var d=m.date.replace(/-/g,'');
+          var gH=m.gather?parseInt(m.gather.split(':')[0]):9;
+          var gM=m.gather?parseInt(m.gather.split(':')[1]):0;
+          var kH=m.kickoff?parseInt(m.kickoff.split(':')[0]):10;
+          var kM=m.kickoff?parseInt(m.kickoff.split(':')[1]):0;
+          var sH=String((gH-8+24)%24).padStart(2,'0');
+          var eH=String(((kH-8+24)%24+2)%24).padStart(2,'0');
+          var gMs=String(gM).padStart(2,'0');
+          var kMs=String(kM).padStart(2,'0');
+          var title=encodeURIComponent('SCS足球 vs '+m.opp+' ('+m.group+')');
+          var det=encodeURIComponent('集合：'+m.gather+'｜比賽：'+m.kickoff+'｜'+m.rule+'｜球衣：'+m.jersey+'｜教練：'+m.coach);
+          var loc=encodeURIComponent(m.venue||'');
+          calUrl='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+title+'&dates='+d+'T'+sH+gMs+'00Z/'+d+'T'+eH+kMs+'00Z&details='+det+'&location='+loc;
+        }
+        return '<div class="match-card"><div class="match-hd"><div class="match-date">'+m.date+' <span class="badge b-nv" style="margin-left:4px">'+m.group+'・'+m.rule+'</span></div><div class="match-vs">SCS vs '+m.opp+'</div><div class="match-meta"><span class="badge b-am">場次 '+m.seq+'</span> <span class="badge b-gray">'+m.jersey+'球衣</span></div></div><div class="match-body"><div class="match-info-row"><span>集合時間</span><span>'+m.gather+'</span></div><div class="match-info-row"><span>比賽時間</span><span>'+m.kickoff+'</span></div><div class="match-info-row"><span>地點</span><span>'+(m.venue||'待確認')+'</span></div><div class="match-info-row"><span>帶隊教練</span><span>'+m.coach+'</span></div><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'+(m.mapUrl?'<a class="map-link" href="'+m.mapUrl+'" target="_blank"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--nv);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>開啟地圖</a>':'')+(calUrl?'<a class="map-link" href="'+calUrl+'" target="_blank" style="background:var(--gn-l);border-color:#97C459;color:var(--gn-d)"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--gn-d);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>加入行事曆</a>':'')+'</div></div></div>';
+      }).join('');
+    }
   }
   var pad=document.getElementById('pa-date');if(pad)pad.valueAsDate=new Date();
   // 配件清單
