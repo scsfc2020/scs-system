@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>SCS 足球俱樂部</title>
+<style>
+:root{
+  --nv:#1F4E79;--nv2:#0C447C;
+  --gn:#1D9E75;--gn-l:#E1F5EE;--gn-d:#085041;
+  --rd:#E24B4A;--rd-l:#FCEBEB;--rd-d:#791F1F;
+  --am:#EF9F27;--am-l:#FAEEDA;--am-d:#633806;
+  --pu:#534AB7;--pu-l:#EEEDFE;--pu-d:#26215C;
+  --g0:#F8F8F6;--g1:#F1EFE8;--g2:#E0DED6;--g4:#888780;--g6:#5F5E5A;--g9:#2C2C2A;
+  --wh:#FFFFFF;
+  --rsm:6px;--rmd:10px;--rlg:14px;--rxl:20px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;background:var(--g0);color:var(--g9);min-height:100vh}
+.app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--wh)}
+.screen{display:none;flex-direction:column;min-height:100vh}
+.screen.active{display:flex}
+.content{flex:1;padding:12px 14px 80px}
+
+/* topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;background:var(--wh);border-bottom:.5px solid var(--g2);position:sticky;top:0;z-index:50}
+.tb-l{display:flex;align-items:center;gap:10px}
+.tb-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.tb-name{font-size:15px;font-weight:600}
+.tb-role{font-size:11px;color:var(--g4);margin-top:1px}
+.logout{font-size:11px;color:var(--g6);border:.5px solid var(--g2);border-radius:20px;padding:4px 12px;cursor:pointer;background:var(--g0)}
+
+/* bottom nav */
+.bnav{position:sticky;bottom:0;background:var(--wh);border-top:.5px solid var(--g2);display:flex;z-index:100;padding:6px 0 max(6px,env(safe-area-inset-bottom))}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border:none;background:transparent;color:var(--g4);cursor:pointer;font-size:9px;font-family:inherit;transition:color .15s}
+.nb.active{color:var(--nv)}
+.nb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nb.active svg{stroke-width:2.2}
+
+/* login */
+.login-bg{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px;background:linear-gradient(160deg,#EAF3FB 0%,var(--wh) 60%)}
+.login-logo{width:68px;height:68px;background:var(--nv);border-radius:20px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center}
+.login-logo svg{width:36px;height:36px;stroke:white;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.login-title{font-size:22px;font-weight:700;text-align:center;color:var(--nv);margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--g4);text-align:center;margin-bottom:28px}
+.login-card{width:100%;background:var(--wh);border:.5px solid var(--g2);border-radius:var(--rxl);padding:22px 20px;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.l-sec{font-size:11px;font-weight:600;color:var(--g4);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
+.rbtn{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;margin-bottom:8px;border:.5px solid var(--g2);border-radius:var(--rmd);background:var(--g0);cursor:pointer;text-align:left;transition:all .15s;font-family:inherit}
+.rbtn:hover{background:#EAF3FB;border-color:#B5D4F4}
+.rbtn:active{transform:scale(.99)}
+.r-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.r-name{font-size:13px;font-weight:600;color:var(--g9)}
+.r-desc{font-size:11px;color:var(--g4);margin-top:1px}
+.divider{height:.5px;background:var(--g2);margin:14px 0}
+.fl{font-size:12px;color:var(--g6);margin-bottom:5px;display:block}
+.fi{width:100%;font-size:14px;padding:10px 12px;border:.5px solid var(--g2);border-radius:var(--rmd);background:var(--wh);color:var(--g9);margin-bottom:10px;font-family:inherit}
+.fi:focus{outline:none;border-color:var(--nv)}
+.fi-sm{font-size:13px;padding:8px 10px;border:.5px solid var(--g2);border-radius:var(--rmd);background:var(--wh);color:var(--g9);font-family:inherit}
+.fi-sm:focus{outline:none;border-color:var(--nv)}
+.btn-p{width:100%;padding:12px;font-size:15px;font-weight:600;background:var(--nv);color:white;border:none;border-radius:var(--rmd);cursor:pointer;font-family:inherit;transition:background .15s}
+.btn-p:hover{background:var(--nv2)}
+.btn-p:active{transform:scale(.99)}
+.btn-p:disabled{background:var(--g2);color:var(--g4);cursor:not-allowed}
+.err-msg{font-size:12px;color:var(--rd);text-align:center;margin-top:8px;display:none}
+
+/* overlay/modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--wh);border-radius:var(--rxl);padding:24px 22px;width:100%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.modal-hd{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.modal-ico{width:36px;height:36px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.modal-ico svg{width:18px;height:18px;stroke:#0C447C;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.modal-title{font-size:14px;font-weight:600}
+.modal-sub{font-size:11px;color:var(--g4);margin-top:1px}
+.pwd-wrap{position:relative;margin-bottom:10px}
+.pwd-inp{width:100%;font-size:15px;padding:11px 44px 11px 14px;border:.5px solid var(--g2);border-radius:var(--rmd);background:var(--g0);color:var(--g9);font-family:inherit;letter-spacing:.08em}
+.pwd-inp:focus{outline:none;border-color:var(--nv)}
+.pwd-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;background:transparent;cursor:pointer;padding:4px;color:var(--g4)}
+.pwd-eye svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pwd-err{display:none;font-size:12px;color:var(--rd);margin-bottom:10px;padding:7px 10px;background:var(--rd-l);border-radius:var(--rsm)}
+.modal-btns{display:flex;gap:8px;margin-top:4px}
+.btn-cancel{flex:1;padding:10px;font-size:13px;border:.5px solid var(--g2);border-radius:var(--rmd);background:var(--g0);color:var(--g6);cursor:pointer;font-family:inherit}
+.btn-ok{flex:2;padding:10px;font-size:14px;font-weight:600;background:var(--nv);color:white;border:none;border-radius:var(--rmd);cursor:pointer;font-family:inherit}
+
+/* common */
+.card{background:var(--wh);border:.5px solid var(--g2);border-radius:var(--rlg);padding:14px 16px;margin-bottom:10px}
+.card-title{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.sec-lbl{font-size:11px;font-weight:600;color:var(--g4);letter-spacing:.05em;text-transform:uppercase;margin:14px 0 6px;padding-left:2px}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;white-space:nowrap}
+.b-ok{background:var(--gn-l);color:var(--gn-d)}
+.b-red{background:var(--rd-l);color:var(--rd-d)}
+.b-am{background:var(--am-l);color:var(--am-d)}
+.b-pu{background:var(--pu-l);color:var(--pu-d)}
+.b-nv{background:#E6F1FB;color:var(--nv2)}
+.b-gray{background:var(--g1);color:var(--g6)}
+.b-teal{background:var(--gn-l);color:var(--gn-d)}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat{background:var(--g0);border:.5px solid var(--g2);border-radius:var(--rmd);padding:10px 6px;text-align:center}
+.stat-n{font-size:21px;font-weight:700}
+.stat-l{font-size:10px;color:var(--g4);margin-top:2px}
+.row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:.5px solid var(--g1)}
+.row:last-child{border-bottom:none}
+.av{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;background:var(--g1);color:var(--g6);border:.5px solid var(--g2)}
+.ri{flex:1;min-width:0}
+.rn{font-size:14px;font-weight:600}
+.rm{font-size:11px;color:var(--g4);margin-top:2px;line-height:1.5}
+.sbtns{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}
+.sb{padding:5px 9px;font-size:11px;font-weight:600;border:.5px solid var(--g2);border-radius:var(--rsm);background:var(--wh);color:var(--g6);cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .1s}
+.sb:hover{background:var(--g0)}
+.sb.sp{background:var(--gn-l);color:var(--gn-d);border-color:#97C459}
+.sb.sk{background:var(--am-l);color:var(--am-d);border-color:var(--am)}
+.sb.sa{background:var(--rd-l);color:var(--rd-d);border-color:var(--rd)}
+.sb.so{background:var(--g1);color:var(--g6);border-color:var(--g4)}
+.note-inp{width:100%;margin-top:6px;font-size:12px;padding:6px 10px;border:.5px solid var(--g2);border-radius:var(--rsm);background:var(--g0);color:var(--g9);display:none;font-family:inherit}
+.note-inp:focus{outline:none;border-color:var(--nv)}
+.al-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:var(--rmd);margin-bottom:6px;font-size:12px;gap:8px}
+.al-red{background:var(--rd-l);border:.5px solid #F09595;color:var(--rd-d)}
+.al-am{background:var(--am-l);border:.5px solid #FAC775;color:var(--am-d)}
+.al-pu{background:var(--pu-l);border:.5px solid #AFA9EC;color:var(--pu-d)}
+.al-gn{background:var(--gn-l);border:.5px solid #97C459;color:var(--gn-d)}
+.al-nv{background:#E6F1FB;border:.5px solid #B5D4F4;color:var(--nv2)}
+.al-btn{font-size:10px;padding:3px 9px;border:.5px solid currentColor;border-radius:4px;background:transparent;cursor:pointer;color:inherit;font-family:inherit;font-weight:600;flex-shrink:0}
+.notice{background:#E6F1FB;border:.5px solid #B5D4F4;border-radius:var(--rmd);padding:10px 12px;font-size:12px;color:var(--nv2);margin-bottom:10px;line-height:1.6}
+.notice-w{background:var(--am-l);border:.5px solid #FAC775;border-radius:var(--rmd);padding:10px 12px;font-size:12px;color:var(--am-d);margin-bottom:10px;line-height:1.6}
+.notice-r{background:var(--rd-l);border:.5px solid #F09595;border-radius:var(--rmd);padding:10px 12px;font-size:12px;color:var(--rd-d);margin-bottom:10px;line-height:1.6}
+.fg{margin-bottom:12px}
+.done-card{text-align:center;padding:28px 16px;background:var(--g0);border:.5px solid var(--g2);border-radius:var(--rlg);margin-top:10px}
+.done-ico{width:52px;height:52px;background:var(--gn-l);border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center}
+.done-ico svg{width:26px;height:26px;stroke:var(--gn-d);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.hist-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:.5px solid var(--g1);font-size:12px;color:var(--g6)}
+.hist-row:last-child{border-bottom:none}
+.submit-bar{background:var(--g0);border:.5px solid var(--g2);border-radius:var(--rlg);padding:12px 14px;margin-top:10px}
+.prog-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--g4);margin-bottom:5px}
+.prog-bar{height:6px;background:var(--g1);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .4s;background:var(--nv)}
+.prog-fill.w{background:var(--am)}
+.prog-fill.d{background:var(--rd)}
+.five-inp{width:100%;font-size:26px;font-weight:700;letter-spacing:.18em;text-align:center;padding:14px;border:.5px solid var(--g2);border-radius:var(--rmd);background:var(--g0);color:var(--nv);font-family:'Courier New',monospace}
+.five-inp:focus{outline:none;border-color:var(--nv);background:white}
+.bank-box{background:var(--g0);border:.5px solid var(--g2);border-radius:var(--rmd);padding:10px 14px;margin-bottom:8px}
+.bank-name{font-size:11px;color:var(--g4);margin-bottom:3px}
+.bank-num{font-size:16px;font-weight:700;color:var(--nv);letter-spacing:.05em}
+.btn-gn{width:100%;padding:11px;font-size:14px;font-weight:600;background:var(--gn);color:white;border:none;border-radius:var(--rmd);cursor:pointer;margin-top:12px;font-family:inherit}
+.btn-gn:hover{background:var(--gn-d)}
+.btn-gn:disabled{background:var(--g2);color:var(--g4);cursor:not-allowed}
+.success-msg{background:var(--gn-l);border:.5px solid #97C459;border-radius:var(--rmd);padding:10px 14px;font-size:13px;color:var(--gn-d);text-align:center;display:none;margin-top:10px;font-weight:600}
+.mk-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:.5px solid var(--g1)}
+.mk-row:last-child{border-bottom:none}
+.mk-dot{width:10px;height:10px;border-radius:50%;background:var(--am);margin-top:4px;flex-shrink:0}
+.mk-dot.done{background:var(--gn)}
+/* match card */
+.match-card{background:var(--wh);border:.5px solid var(--g2);border-radius:var(--rlg);overflow:hidden;margin-bottom:10px}
+.match-hd{padding:12px 14px;border-bottom:.5px solid var(--g1)}
+.match-date{font-size:13px;font-weight:600;color:var(--nv);margin-bottom:2px}
+.match-vs{font-size:18px;font-weight:700;margin-bottom:4px}
+.match-meta{font-size:11px;color:var(--g4);line-height:1.7}
+.match-body{padding:10px 14px}
+.match-info-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:.5px solid var(--g1);font-size:12px}
+.match-info-row:last-child{border-bottom:none}
+.match-info-row span:first-child{color:var(--g4)}
+.match-info-row span:last-child{font-weight:600;color:var(--g9)}
+.map-link{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--nv);text-decoration:none;padding:3px 8px;border:.5px solid #B5D4F4;border-radius:20px;background:#E6F1FB;margin-top:4px}
+.map-link svg{width:12px;height:12px;stroke:var(--nv);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* player chips */
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.chip{padding:3px 9px;font-size:11px;border-radius:20px;background:var(--g0);border:.5px solid var(--g2);color:var(--g9);cursor:pointer;font-family:inherit;transition:all .1s}
+.chip.sel{background:var(--nv);color:white;border-color:var(--nv)}
+/* jersey */
+.jersey-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.jnum{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:var(--rsm);font-size:13px;font-weight:700;border:.5px solid var(--g2);background:var(--g0);color:var(--g9);cursor:pointer;position:relative}
+.jnum.taken{background:var(--rd-l);color:var(--rd-d);border-color:var(--rd)}
+.jnum.mine{background:var(--nv);color:white;border-color:var(--nv)}
+.jnum.avail:hover{background:var(--gn-l);border-color:var(--gn)}
+/* accessory */
+.acc-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:.5px solid var(--g1)}
+.acc-item:last-child{border-bottom:none}
+.acc-name{font-size:13px;font-weight:500;flex:1}
+.acc-price{font-size:12px;color:var(--g4);margin-top:1px}
+.acc-qty{display:flex;align-items:center;gap:8px}
+.qty-btn{width:28px;height:28px;border-radius:50%;border:.5px solid var(--g2);background:var(--g0);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;font-weight:500;color:var(--g9)}
+.qty-btn:hover{background:var(--g1)}
+.qty-num{font-size:15px;font-weight:600;min-width:20px;text-align:center}
+.order-total{background:var(--nv);color:white;border-radius:var(--rlg);padding:14px 16px;margin-top:10px;display:flex;justify-content:space-between;align-items:center}
+.order-total span:first-child{font-size:13px;opacity:.8}
+.order-total span:last-child{font-size:20px;font-weight:700}
+/* warning box */
+.warn-box{background:var(--am-l);border:.5px solid var(--am);border-radius:var(--rmd);padding:10px 12px;font-size:12px;color:var(--am-d);margin-top:8px;line-height:1.6}
+/* delivery alert */
+.delivery-alert{background:var(--gn-l);border:.5px solid var(--gn);border-radius:var(--rlg);padding:12px 14px;margin-bottom:10px}
+.delivery-alert-title{font-size:13px;font-weight:600;color:var(--gn-d);margin-bottom:4px}
+.delivery-alert-body{font-size:12px;color:var(--gn-d);line-height:1.6}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- LOGIN -->
+<div class="screen active" id="s-login">
+<div class="login-bg">
+  <div class="login-logo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><line x1="2" y1="12" x2="22" y2="12"/></svg></div>
+  <div class="login-title">SCS 足球俱樂部</div>
+  <div class="login-sub">點名・行政・家長・比賽 服務平台</div>
+  <div class="login-card">
+    <div class="l-sec">選擇身份</div>
+    <button class="rbtn" onclick="askPwd('admin')">
+      <div class="r-av" style="background:#E6F1FB;color:#0C447C">行</div>
+      <div><div class="r-name">行政人員</div><div class="r-desc">游佳穎 · 管理全部班級與比賽</div></div>
+    </button>
+    <button class="rbtn" onclick="askPwd('wai')">
+      <div class="r-av" style="background:var(--gn-l);color:var(--gn-d)">崴</div>
+      <div><div class="r-name">楊鈞崴 教練</div><div class="r-desc">北大週六・週三競技組</div></div>
+    </button>
+    <button class="rbtn" onclick="askPwd('long')">
+      <div class="r-av" style="background:var(--am-l);color:var(--am-d)">隆</div>
+      <div><div class="r-name">楊鈞隆 教練</div><div class="r-desc">天母・週三競技組（共同）</div></div>
+    </button>
+    <div class="divider"></div>
+    <div class="l-sec">家長登入</div>
+    <div class="fg"><label class="fl">小朋友姓名</label><input class="fi" id="p-name" type="text" placeholder="請輸入姓名"></div>
+    <div class="fg" style="margin-bottom:12px"><label class="fl">出生年月日</label><input class="fi" id="p-bday" type="date"></div>
+    <button class="btn-p" onclick="parentLogin()">家長登入</button>
+    <div class="err-msg" id="p-err">查無此學生，請確認姓名與生日</div>
+    <div style="margin-top:14px;padding:10px;background:var(--g0);border-radius:var(--rmd);font-size:11px;color:var(--g4);text-align:center">
+      Demo 快速登入：
+      <span onclick="pQuick('張鈞傑','2015-06-12')" style="color:var(--nv);cursor:pointer;text-decoration:underline">張鈞傑</span>　
+      <span onclick="pQuick('甯柏安','2019-03-08')" style="color:var(--nv);cursor:pointer;text-decoration:underline">甯柏安</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- PASSWORD MODAL -->
+<div class="overlay" id="pwd-overlay">
+<div class="modal">
+  <div class="modal-hd">
+    <div class="modal-ico"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    <div><div class="modal-title" id="pwd-who">輸入密碼</div><div class="modal-sub">請輸入系統密碼</div></div>
+  </div>
+  <div class="pwd-wrap">
+    <input class="pwd-inp" id="pwd-inp" type="password" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')submitPwd()">
+    <button class="pwd-eye" onclick="toggleEye()"><svg id="pwd-eye-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+  </div>
+  <div class="pwd-err" id="pwd-err">密碼錯誤，請再試一次</div>
+  <div class="modal-btns">
+    <button class="btn-cancel" onclick="closePwd()">取消</button>
+    <button class="btn-ok" onclick="submitPwd()">登入</button>
+  </div>
+</div>
+</div>
+
+<!-- JERSEY WARNING MODAL -->
+<div class="overlay" id="jersey-overlay">
+<div class="modal">
+  <div class="modal-hd">
+    <div class="modal-ico" style="background:var(--am-l)"><svg viewBox="0 0 24 24" style="stroke:#633806"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+    <div><div class="modal-title">球衣號碼衝突警告</div><div class="modal-sub">請確認後再儲存</div></div>
+  </div>
+  <div id="jersey-warn-body" style="font-size:13px;color:var(--g6);line-height:1.7;margin-bottom:16px"></div>
+  <div class="modal-btns">
+    <button class="btn-cancel" onclick="closeJerseyWarn()">重新選擇</button>
+    <button class="btn-ok" style="background:var(--am-d)" onclick="forceJersey()">確認使用此號碼</button>
+  </div>
+</div>
+</div>
+
+<!-- ADMIN -->
+<div class="screen" id="s-admin">
+<div class="topbar">
+  <div class="tb-l"><div class="tb-av" style="background:#E6F1FB;color:#0C447C">行</div><div><div class="tb-name">游佳穎</div><div class="tb-role">行政後台</div></div></div>
+  <span class="logout" onclick="doLogout()">登出</span>
+</div>
+<div class="content">
+  <!-- 總覽 -->
+  <div id="a-dash">
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-n">80</div><div class="stat-l">學生總數</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--rd)">7</div><div class="stat-l">未繳費</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--am)">29</div><div class="stat-l">需續費</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--pu)">3</div><div class="stat-l">配件待取</div></div>
+    </div>
+    <div class="sec-lbl">今日課程</div>
+    <div class="card">
+      <div class="row"><div class="av" style="background:var(--gn-l);color:var(--gn-d)">崴</div><div class="ri"><div class="rn">北大週六國小 15:30–17:00</div><div class="rm"><span class="badge b-teal">崴崴（主）</span> 7人・<span style="color:var(--rd)">2請假</span></div></div><span class="badge b-am">待點名</span></div>
+      <div class="row"><div class="av" style="background:var(--gn-l);color:var(--gn-d)">雙</div><div class="ri"><div class="rn">北大週三競技組 18:45–20:45</div><div class="rm"><span class="badge b-teal">崴崴</span> <span class="badge b-am">隆隆</span> 雙師・17人</div></div><span class="badge b-nv">今晚</span></div>
+    </div>
+    <div class="sec-lbl">近期比賽</div>
+    <div class="card">
+      <div class="row"><div class="av" style="background:#E6F1FB;color:var(--nv2)">U10</div><div class="ri"><div class="rn">vs 海山國小 <span class="badge b-nv">4/20</span></div><div class="rm">八人制・09:00集合・甲場・7人參加</div></div><span class="badge b-ok">已設定</span></div>
+      <div class="row"><div class="av" style="background:#E6F1FB;color:var(--nv2)">U8</div><div class="ri"><div class="rn">vs ZYES <span class="badge b-am">4/27</span></div><div class="rm">五人制・08:00集合・乙場</div></div><span class="badge b-am">設定中</span></div>
+    </div>
+    <div class="sec-lbl">待處理</div>
+    <div class="al-row al-red"><span>顏嵩又・天母週一・$3,500</span><button class="al-btn" onclick="this.closest('.al-row').style.opacity='.4';this.closest('.al-row').style.pointerEvents='none'">已繳 ✓</button></div>
+    <div class="al-row al-am"><span>張丹魁・北大週六國小・剩1堂</span><button class="al-btn">發提醒</button></div>
+    <div class="al-row al-gn"><span>配件：張鈞傑 黑色球衣球褲 → 已出貨</span><button class="al-btn">更新</button></div>
+  </div>
+  <!-- 比賽管理 -->
+  <div id="a-match" style="display:none">
+    <div class="card">
+      <div class="card-title">新增比賽</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><label class="fl">場次編號</label><input class="fi-sm" style="width:100%" type="text" id="m-seq" placeholder="例：A-089"></div>
+        <div class="fg"><label class="fl">組別</label><select class="fi-sm" style="width:100%" id="m-group"><option>U6</option><option>U7</option><option>U8</option><option selected>U10</option><option>U11</option><option>U12</option><option>國中組</option></select></div>
+        <div class="fg"><label class="fl">比賽日期</label><input class="fi-sm" style="width:100%" type="date" id="m-date"></div>
+        <div class="fg"><label class="fl">賽制</label><select class="fi-sm" style="width:100%" id="m-rule"><option>五人制</option><option>七人制</option><option selected>八人制</option></select></div>
+        <div class="fg"><label class="fl">集合時間</label><input class="fi-sm" style="width:100%" type="time" id="m-gather" value="08:30"></div>
+        <div class="fg"><label class="fl">比賽時間</label><input class="fi-sm" style="width:100%" type="time" id="m-kickoff" value="09:00"></div>
+      </div>
+      <div class="fg"><label class="fl">對手名稱</label><input class="fi-sm" style="width:100%" type="text" id="m-opp" placeholder="例：海山國小"></div>
+      <div class="fg"><label class="fl">比賽地點</label><input class="fi-sm" style="width:100%" type="text" id="m-venue" placeholder="例：新北市立板橋國民運動中心"></div>
+      <div class="fg"><label class="fl">地圖連結（Google Maps）</label><input class="fi-sm" style="width:100%" type="url" id="m-map" placeholder="https://maps.google.com/..."></div>
+      <div class="fg"><label class="fl">球衣顏色</label><select class="fi-sm" style="width:100%" id="m-jersey"><option>黑色</option><option>白色</option></select></div>
+      <div class="fg"><label class="fl">帶隊教練</label><select class="fi-sm" style="width:100%" id="m-coach"><option>楊鈞崴（崴崴）</option><option>楊鈞隆（隆隆）</option><option>方銓</option></select></div>
+      <div class="fg"><label class="fl">參加球員（可多選）</label>
+        <div class="chips" id="m-players">
+          <button class="chip" onclick="toggleChip(this)">張鈞現</button><button class="chip" onclick="toggleChip(this)">張希鍒</button><button class="chip" onclick="toggleChip(this)">張丹魁</button><button class="chip" onclick="toggleChip(this)">林立學</button><button class="chip" onclick="toggleChip(this)">周紘緯</button><button class="chip" onclick="toggleChip(this)">廖翊軒</button><button class="chip" onclick="toggleChip(this)">陳祈睿</button><button class="chip" onclick="toggleChip(this)">黃浚宸</button><button class="chip" onclick="toggleChip(this)">黃浚禕</button><button class="chip" onclick="toggleChip(this)">蔡夏恩</button>
+        </div>
+      </div>
+      <button class="btn-p" style="margin-top:4px" onclick="saveMatch()">儲存比賽</button>
+      <div class="success-msg" id="m-ok">比賽已儲存，家長與教練端即時更新</div>
+    </div>
+    <div class="card">
+      <div class="card-title">已設定比賽</div>
+      <div id="match-list-admin">
+        <div class="row" style="cursor:pointer" onclick="openMatchEdit(0)">
+          <div class="av" style="background:#E6F1FB;color:var(--nv2)">U10</div>
+          <div class="ri"><div class="rn">A-052 vs 海山國小</div><div class="rm">4/20・08:30集合・09:00・八人制・甲場・崴崴</div></div>
+          <span style="font-size:11px;color:var(--nv);font-weight:600;flex-shrink:0">編輯 ›</span>
+        </div>
+        <div class="row" style="cursor:pointer" onclick="openMatchEdit(1)">
+          <div class="av" style="background:#E6F1FB;color:var(--nv2)">U8</div>
+          <div class="ri"><div class="rn">B-089 vs ZYES</div><div class="rm">4/27・08:00集合・09:00・五人制・乙場・隆隆</div></div>
+          <span style="font-size:11px;color:var(--nv);font-weight:600;flex-shrink:0">編輯 ›</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 比賽編輯頁（行政） -->
+  <div id="a-match-edit" style="display:none">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button onclick="closeMatchEdit()" style="padding:6px 12px;font-size:13px;border:.5px solid var(--g2);border-radius:var(--rsm);background:var(--g0);cursor:pointer;font-family:inherit">‹ 返回</button>
+      <span style="font-size:15px;font-weight:600" id="me-title">編輯比賽</span>
+    </div>
+    <div class="card">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><label class="fl">場次編號</label><input class="fi-sm" style="width:100%" type="text" id="me-seq"></div>
+        <div class="fg"><label class="fl">組別</label><select class="fi-sm" style="width:100%" id="me-group"><option>U6</option><option>U7</option><option>U8</option><option>U9</option><option>U10</option><option>U11</option><option>U12</option><option>國中組</option></select></div>
+        <div class="fg"><label class="fl">比賽日期</label><input class="fi-sm" style="width:100%" type="date" id="me-date"></div>
+        <div class="fg"><label class="fl">賽制</label><select class="fi-sm" style="width:100%" id="me-rule"><option>五人制</option><option>七人制</option><option>八人制</option></select></div>
+        <div class="fg"><label class="fl">集合時間</label><input class="fi-sm" style="width:100%" type="time" id="me-gather"></div>
+        <div class="fg"><label class="fl">比賽時間</label><input class="fi-sm" style="width:100%" type="time" id="me-kickoff"></div>
+      </div>
+      <div class="fg"><label class="fl">對手名稱</label><input class="fi-sm" style="width:100%" type="text" id="me-opp"></div>
+      <div class="fg"><label class="fl">比賽地點</label><input class="fi-sm" style="width:100%" type="text" id="me-venue"></div>
+      <div class="fg"><label class="fl">地圖連結</label><input class="fi-sm" style="width:100%" type="url" id="me-map"></div>
+      <div class="fg"><label class="fl">球衣顏色</label><select class="fi-sm" style="width:100%" id="me-jersey"><option>黑色</option><option>白色</option></select></div>
+      <div class="fg"><label class="fl">帶隊教練</label><select class="fi-sm" style="width:100%" id="me-coach"><option>楊鈞崴（崴崴）</option><option>楊鈞隆（隆隆）</option><option>方銓</option></select></div>
+      <div class="fg"><label class="fl">參加球員（可多選）</label>
+        <div class="chips" id="me-players">
+          <button class="chip" onclick="toggleChip(this)">張鈞現</button><button class="chip" onclick="toggleChip(this)">張希鍒</button><button class="chip" onclick="toggleChip(this)">張丹魁</button><button class="chip" onclick="toggleChip(this)">林立學</button><button class="chip" onclick="toggleChip(this)">周紘緯</button><button class="chip" onclick="toggleChip(this)">廖翊軒</button><button class="chip" onclick="toggleChip(this)">陳祈睿</button><button class="chip" onclick="toggleChip(this)">黃浚宸</button><button class="chip" onclick="toggleChip(this)">黃浚禕</button><button class="chip" onclick="toggleChip(this)">蔡夏恩</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn-p" style="flex:2" onclick="saveMatchEdit()">儲存變更</button>
+        <button style="flex:1;padding:11px;font-size:13px;font-weight:600;background:var(--rd-l);color:var(--rd-d);border:.5px solid var(--rd);border-radius:var(--rmd);cursor:pointer;font-family:inherit" onclick="deleteMatch()">刪除</button>
+      </div>
+      <div class="success-msg" id="me-ok">已儲存，家長與教練端即時更新</div>
+    </div>
+  </div>
+  <!-- 球衣背號 -->
+  <div id="a-jersey" style="display:none">
+    <div class="notice">整個俱樂部所有學生的球衣號碼不得重複。指派時若偵測到衝突，系統會彈出警告。</div>
+    <div class="card">
+      <div class="card-title">指派球衣號碼</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div class="fg"><label class="fl">選擇學生</label>
+          <select class="fi-sm" style="width:100%" id="j-student" onchange="loadJerseyStudent()">
+            <option value="">— 選擇 —</option>
+            <option value="張鈞傑|3|7">張鈞傑（3年級）</option>
+            <option value="張鈞現|3|null">張鈞現（3年級）</option>
+            <option value="甯柏安|幼大|null">甯柏安（幼大班）</option>
+            <option value="林承慷|幼大|null">林承慷（幼大班）</option>
+            <option value="陳祈睿|4|32">陳祈睿（4年級）</option>
+            <option value="黃浚宸|3|22">黃浚宸（3年級）</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">現有背號</label><div id="j-current" style="font-size:20px;font-weight:700;color:var(--nv);padding:8px 0">—</div></div>
+      </div>
+      <div class="fg"><label class="fl">選擇新背號（紅=已被使用）</label>
+        <div class="jersey-grid" id="j-grid"></div>
+      </div>
+      <div id="j-warn" class="warn-box" style="display:none"></div>
+      <button class="btn-p" style="margin-top:12px" id="j-save-btn" onclick="confirmJersey()" disabled>儲存背號</button>
+    </div>
+    <div class="card">
+      <div class="card-title">球衣號碼總覽</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="j-overview">
+        <div style="background:var(--g0);border-radius:var(--rsm);padding:6px 10px;font-size:12px"><span style="font-weight:700;color:var(--nv)">No.7</span> 張鈞傑 <span style="color:var(--g4)">3年級</span></div>
+        <div style="background:var(--g0);border-radius:var(--rsm);padding:6px 10px;font-size:12px"><span style="font-weight:700;color:var(--nv)">No.22</span> 黃浚宸 <span style="color:var(--g4)">3年級</span></div>
+        <div style="background:var(--g0);border-radius:var(--rsm);padding:6px 10px;font-size:12px"><span style="font-weight:700;color:var(--nv)">No.32</span> 陳祈睿 <span style="color:var(--g4)">4年級</span></div>
+        <div style="background:var(--g0);border-radius:var(--rsm);padding:6px 10px;font-size:12px"><span style="font-weight:700;color:var(--nv)">No.50</span> 張諺霖 <span style="color:var(--g4)">5年級</span></div>
+        <div style="background:var(--g0);border-radius:var(--rsm);padding:6px 10px;font-size:12px"><span style="font-weight:700;color:var(--nv)">No.86</span> 林昱廷 <span style="color:var(--g4)">3年級</span></div>
+        <div style="background:var(--g0);border-radius:var(--rsm);padding:6px 10px;font-size:12px"><span style="font-weight:700;color:var(--am-d)">無背號</span> 張鈞現 <span style="color:var(--g4)">3年級</span></div>
+      </div>
+    </div>
+  </div>
+  <!-- 配件管理 -->
+  <div id="a-acc-admin" style="display:none">
+    <!-- 訂單列表 -->
+    <div id="acc-admin-list">
+      <div class="card">
+        <div class="card-title">配件訂單列表<span style="font-size:11px;font-weight:400;color:var(--g4)">（點進去查看完整內容）</span></div>
+        <div class="row" style="cursor:pointer" onclick="openOrder(0)">
+          <div class="av" style="background:var(--am-l);color:var(--am-d)">張</div>
+          <div class="ri"><div class="rn">張鈞傑 <span class="badge b-am">未付款</span></div><div class="rm">黑色球衣球褲 × 1・$1,000・4/15 訂購</div></div>
+          <span style="font-size:11px;color:var(--nv);font-weight:600;flex-shrink:0">詳情 ›</span>
+        </div>
+        <div class="row" style="cursor:pointer" onclick="openOrder(1)">
+          <div class="av" style="background:var(--gn-l);color:var(--gn-d)">甯</div>
+          <div class="ri"><div class="rn">甯柏安 <span class="badge b-ok">已出貨</span></div><div class="rm">黑色長襪 × 2・$400・4/12 訂購</div></div>
+          <span style="font-size:11px;color:var(--nv);font-weight:600;flex-shrink:0">詳情 ›</span>
+        </div>
+        <div class="row" style="cursor:pointer" onclick="openOrder(2)">
+          <div class="av" style="background:var(--g1);color:var(--g6)">林</div>
+          <div class="ri"><div class="rn">林承慷 <span class="badge b-gray">已取貨</span></div><div class="rm">SCS 4號高彈跳足球 × 1・$1,100・4/10 訂購</div></div>
+          <span style="font-size:11px;color:var(--nv);font-weight:600;flex-shrink:0">詳情 ›</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 訂單詳情（行政編輯） -->
+    <div id="acc-admin-detail" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <button onclick="closeOrder()" style="padding:6px 12px;font-size:13px;border:.5px solid var(--g2);border-radius:var(--rsm);background:var(--g0);cursor:pointer;font-family:inherit">‹ 返回</button>
+        <span style="font-size:15px;font-weight:600" id="od-title">訂單詳情</span>
+      </div>
+      <div class="card">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-bottom:12px;border-bottom:.5px solid var(--g1);margin-bottom:12px">
+          <div><div style="font-size:11px;color:var(--g4)">訂購人</div><div style="font-size:14px;font-weight:600" id="od-buyer"></div></div>
+          <div><div style="font-size:11px;color:var(--g4)">學生</div><div style="font-size:14px;font-weight:600" id="od-student"></div></div>
+          <div><div style="font-size:11px;color:var(--g4)">聯絡電話</div><div style="font-size:13px" id="od-phone"></div></div>
+          <div><div style="font-size:11px;color:var(--g4)">訂購日期</div><div style="font-size:13px" id="od-date"></div></div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--g4);margin-bottom:8px">訂購品項</div>
+        <div id="od-items"></div>
+        <div style="border-top:.5px solid var(--g1);margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;font-size:14px">
+          <span style="color:var(--g6)">合計</span><span style="font-weight:700" id="od-total"></span>
+        </div>
+        <div id="od-note-wrap" style="margin-top:10px;padding-top:10px;border-top:.5px solid var(--g1);display:none">
+          <div style="font-size:11px;color:var(--g4);margin-bottom:4px">備註</div>
+          <div style="font-size:13px;color:var(--g9)" id="od-note"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">付款狀態</div>
+        <div id="od-pay-info" style="font-size:12px;color:var(--g6);margin-bottom:10px;line-height:1.6"></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="sb" id="od-btn-unpaid" onclick="setOrderStatus('unpaid')">未付款</button>
+          <button class="sb" id="od-btn-paid" onclick="setOrderStatus('paid')">已付款</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">出貨狀態</div>
+        <div style="font-size:12px;color:var(--g6);margin-bottom:10px;line-height:1.6">標記已出貨後，教練點名頁會顯示到貨通知，家長頁面也會提示前來索取。</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="sb" id="od-btn-pending" onclick="setOrderStatus('pending')">待出貨</button>
+          <button class="sb" id="od-btn-shipped" onclick="setOrderStatus('shipped')">已出貨</button>
+          <button class="sb" id="od-btn-received" onclick="setOrderStatus('received')">已取貨</button>
+        </div>
+        <div class="success-msg" id="od-ok" style="margin-top:8px">狀態已更新</div>
+      </div>
+      <div class="card">
+        <div class="card-title">修改數量</div>
+        <div id="od-edit-items"></div>
+        <button class="btn-p" style="margin-top:10px" onclick="saveOrderEdit()">儲存修改</button>
+        <div class="success-msg" id="od-edit-ok" style="margin-top:6px">已儲存</div>
+      </div>
+    </div>
+  </div>
+  <!-- 請假 -->
+  <div id="a-absence" style="display:none">
+    <div class="notice">登記後，教練端「行政已標記請假」區塊自動顯示，教練無需再點。</div>
+    <div class="card">
+      <div class="card-title">登記請假</div>
+      <div class="fg"><label class="fl">班級</label><select class="fi-sm" style="width:100%"><option>北大週六國小 15:30-17:00</option><option>北大週三競技組 18:45-20:45</option><option>天母週日幼兒B 16:00-17:30</option></select></div>
+      <div class="fg"><label class="fl">學生</label><select class="fi-sm" style="width:100%"><option>張鈞傑</option><option>張鈞現</option><option>甯柏安</option><option>林承慷</option></select></div>
+      <div class="fg"><label class="fl">日期</label><input class="fi-sm" style="width:100%" type="date" id="ab-date"></div>
+      <div class="fg"><label class="fl">原因</label><input class="fi-sm" style="width:100%" type="text" placeholder="例：生病、出遊"></div>
+      <div class="fg"><label class="fl">補課安排</label><select class="fi-sm" style="width:100%"><option>尚未安排</option><option>安排補北大週三</option><option>折抵下期（最多2堂）</option></select></div>
+      <button class="btn-p" style="margin-top:12px" onclick="alert('已登記，教練端自動更新')">登記請假</button>
+    </div>
+  </div>
+  <!-- 工時 -->
+  <div id="a-hours" style="display:none">
+    <div class="card">
+      <div class="card-title">教練工時（本月）</div>
+      <div class="row"><div class="av" style="background:var(--gn-l);color:var(--gn-d)">崴</div><div class="ri"><div class="rn">楊鈞崴（崴崴）</div><div class="rm">北大週六 + 週三競技組</div></div><div style="text-align:right"><div style="font-size:18px;font-weight:700">39.5</div><div style="font-size:10px;color:var(--g4)">小時</div></div></div>
+      <div class="row"><div class="av" style="background:var(--am-l);color:var(--am-d)">隆</div><div class="ri"><div class="rn">楊鈞隆（隆隆）</div><div class="rm">天母 + 週三競技組（共同）</div></div><div style="text-align:right"><div style="font-size:18px;font-weight:700">36</div><div style="font-size:10px;color:var(--g4)">小時</div></div></div>
+      <div style="border-top:.5px solid var(--g1);margin-top:6px;padding-top:10px;display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--g6)">本月合計</span><span style="font-weight:700">75.5 小時</span></div>
+    </div>
+  </div>
+</div>
+<nav class="bnav">
+  <button class="nb active" onclick="aTab(this,'a-dash')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>總覽</button>
+  <button class="nb" onclick="aTab(this,'a-match')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>比賽</button>
+  <button class="nb" onclick="aTab(this,'a-jersey')"><svg viewBox="0 0 24 24"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>球衣</button>
+  <button class="nb" onclick="aTab(this,'a-acc-admin')"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>配件</button>
+  <button class="nb" onclick="aTab(this,'a-absence')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/></svg>請假</button>
+  <button class="nb" onclick="aTab(this,'a-hours')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>工時</button>
+</nav>
+</div>
+
+<!-- COACH WAI -->
+<div class="screen" id="s-wai">
+<div class="topbar">
+  <div class="tb-l"><div class="tb-av" style="background:var(--gn-l);color:var(--gn-d)">崴</div><div><div class="tb-name">楊鈞崴 教練</div><div class="tb-role">北大週六・週三競技組</div></div></div>
+  <span class="logout" onclick="doLogout()">登出</span>
+</div>
+<div class="content">
+  <div id="wai-today">
+    <!-- 配件到貨提示 -->
+    <div class="delivery-alert">
+      <div class="delivery-alert-title">配件到貨通知</div>
+      <div class="delivery-alert-body">張鈞傑 的「黑色球衣球褲」已到，請今日上課時交給家長。<button class="al-btn" style="margin-left:8px;border-color:var(--gn-d);color:var(--gn-d)" onclick="this.parentElement.parentElement.parentElement.style.display='none'">確認已交 ✓</button></div>
+    </div>
+    <!-- 今日比賽提示 -->
+    <div class="notice">今日無比賽任務。下次比賽：4/20（日）U10 vs 海山國小，08:30集合</div>
+    <div style="background:var(--nv);border-radius:var(--rlg);padding:16px;margin-bottom:10px;color:white">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px">北大週六國小 15:30–17:00</div>
+      <div style="font-size:12px;opacity:.75;line-height:1.7">今日 · 1.5hr · 正式7人 · 2請假<div style="margin-top:4px"><span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.2);color:white;margin-right:4px;font-weight:600">崴崴（主）</span></div></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-n" id="w-tot">10</div><div class="stat-l">今日總人</div></div>
+      <div class="stat"><div class="stat-n" id="w-pre" style="color:var(--gn)">0</div><div class="stat-l">出席</div></div>
+      <div class="stat"><div class="stat-n" id="w-abs" style="color:var(--rd)">2</div><div class="stat-l">請假/缺席</div></div>
+      <div class="stat"><div class="stat-n" id="w-oth" style="color:var(--pu)">0</div><div class="stat-l">其他</div></div>
+    </div>
+    <div class="sec-lbl">行政已標記請假</div>
+    <div class="card" style="border-color:#F09595">
+      <div class="row"><div class="av" style="background:var(--rd-l);color:var(--rd-d)">張</div><div class="ri"><div class="rn">張鈞傑 <span class="badge b-red">請假</span></div><div class="rm">生病・補課待安排・剩3堂</div></div></div>
+      <div class="row"><div class="av" style="background:var(--rd-l);color:var(--rd-d)">麥</div><div class="ri"><div class="rn">麥雅則 <span class="badge b-red">請假</span></div><div class="rm">出遊・安排補北大週三・剩4堂</div></div></div>
+    </div>
+    <div class="sec-lbl">正式學生點名</div>
+    <div class="card">
+      <div id="wr-張鈞現" class="row"><div class="av" id="wa-張鈞現">張</div><div class="ri"><div class="rn">張鈞現 <span class="badge b-am">剩3堂</span></div><div class="sbtns"><button class="sb" onclick="wSet('張鈞現','p')">出席</button><button class="sb" onclick="wSet('張鈞現','k')">請假</button><button class="sb" onclick="wSet('張鈞現','a')">缺席</button><button class="sb" onclick="wSet('張鈞現','o')">其他</button></div><input class="note-inp" id="wn-張鈞現" placeholder="備註（早退原因等）"></div></div>
+      <div id="wr-張希鍒" class="row"><div class="av" id="wa-張希鍒">張</div><div class="ri"><div class="rn">張希鍒 <span class="badge b-am">剩3堂</span></div><div class="sbtns"><button class="sb" onclick="wSet('張希鍒','p')">出席</button><button class="sb" onclick="wSet('張希鍒','k')">請假</button><button class="sb" onclick="wSet('張希鍒','a')">缺席</button><button class="sb" onclick="wSet('張希鍒','o')">其他</button></div><input class="note-inp" id="wn-張希鍒" placeholder="備註"></div></div>
+      <div id="wr-張丹魁" class="row"><div class="av" id="wa-張丹魁">張</div><div class="ri"><div class="rn">張丹魁 <span class="badge b-red">剩1堂</span></div><div class="sbtns"><button class="sb" onclick="wSet('張丹魁','p')">出席</button><button class="sb" onclick="wSet('張丹魁','k')">請假</button><button class="sb" onclick="wSet('張丹魁','a')">缺席</button><button class="sb" onclick="wSet('張丹魁','o')">其他</button></div><input class="note-inp" id="wn-張丹魁" placeholder="備註"></div></div>
+      <div id="wr-林立學" class="row"><div class="av" id="wa-林立學">林</div><div class="ri"><div class="rn">林立學 <span class="badge b-am">剩4堂</span></div><div class="sbtns"><button class="sb" onclick="wSet('林立學','p')">出席</button><button class="sb" onclick="wSet('林立學','k')">請假</button><button class="sb" onclick="wSet('林立學','a')">缺席</button><button class="sb" onclick="wSet('林立學','o')">其他</button></div><input class="note-inp" id="wn-林立學" placeholder="備註"></div></div>
+      <div id="wr-周紘緯" class="row"><div class="av" id="wa-周紘緯">周</div><div class="ri"><div class="rn">周紘緯 <span class="badge b-ok">剩5堂</span></div><div class="sbtns"><button class="sb" onclick="wSet('周紘緯','p')">出席</button><button class="sb" onclick="wSet('周紘緯','k')">請假</button><button class="sb" onclick="wSet('周紘緯','a')">缺席</button><button class="sb" onclick="wSet('周紘緯','o')">其他</button></div><input class="note-inp" id="wn-周紘緯" placeholder="備註"></div></div>
+    </div>
+    <div id="wai-submit-area">
+      <div class="submit-bar"><div id="wai-sum" style="font-size:12px;color:var(--g6);margin-bottom:8px;line-height:1.7">尚未開始點名</div><button class="btn-p" onclick="waiSubmit()">送出點名結果</button></div>
+    </div>
+    <div id="wai-done" style="display:none"><div class="done-card"><div class="done-ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><p style="font-size:16px;font-weight:700;margin-bottom:6px">點名完成</p><p style="font-size:13px;color:var(--g6)" id="wai-done-txt">資料已同步行政後台</p></div></div>
+  </div>
+  <!-- 比賽 tab -->
+  <div id="wai-match" style="display:none">
+    <div class="match-card">
+      <div class="match-hd">
+        <div class="match-date">4/20（日）<span class="badge b-nv" style="margin-left:4px">U10・八人制</span></div>
+        <div class="match-vs">SCS vs 海山國小</div>
+        <div class="match-meta"><span class="badge b-am">場次 A-052</span> <span class="badge b-gray">黑色球衣</span></div>
+      </div>
+      <div class="match-body">
+        <div class="match-info-row"><span>集合時間</span><span>08:30</span></div>
+        <div class="match-info-row"><span>比賽時間</span><span>09:00</span></div>
+        <div class="match-info-row"><span>地點</span><span>板橋國民運動中心</span></div>
+        <div class="match-info-row"><span>帶隊教練</span><span>楊鈞崴（崴崴）</span></div>
+        <a class="map-link" href="https://maps.google.com" target="_blank"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>開啟地圖</a>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">參加球員（7人）</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <span class="badge b-nv" style="font-size:11px;padding:4px 10px">No.7 張鈞傑</span>
+        <span class="badge b-nv" style="font-size:11px;padding:4px 10px">No.22 黃浚宸</span>
+        <span class="badge b-nv" style="font-size:11px;padding:4px 10px">No.32 陳祈睿</span>
+        <span class="badge b-nv" style="font-size:11px;padding:4px 10px">No.86 林昱廷</span>
+        <span class="badge b-nv" style="font-size:11px;padding:4px 10px">廖翊軒</span>
+        <span class="badge b-nv" style="font-size:11px;padding:4px 10px">蔡夏恩</span>
+        <span class="badge b-nv" style="font-size:11px;padding:4px 10px">黃浚禕</span>
+      </div>
+    </div>
+  </div>
+  <div id="wai-hist" style="display:none">
+    <div class="card"><div class="card-title">本月工時</div>
+      <div class="hist-row"><span>北大週六國小</span><span style="font-weight:700">1.5 × 2堂 = 3 hr</span></div>
+      <div class="hist-row"><span>北大週三競技組</span><span style="font-weight:700">2 × 2堂 = 4 hr</span></div>
+      <div class="hist-row" style="font-weight:700;color:var(--nv)"><span>合計（進行中）</span><span>7 hr</span></div>
+    </div>
+  </div>
+</div>
+<nav class="bnav">
+  <button class="nb active" onclick="cTab('wai',this,'wai-today')"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>今日點名</button>
+  <button class="nb" onclick="cTab('wai',this,'wai-match')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>比賽資訊</button>
+  <button class="nb" onclick="cTab('wai',this,'wai-hist')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>紀錄/工時</button>
+</nav>
+</div>
+
+<!-- COACH LONG -->
+<div class="screen" id="s-long">
+<div class="topbar">
+  <div class="tb-l"><div class="tb-av" style="background:var(--am-l);color:var(--am-d)">隆</div><div><div class="tb-name">楊鈞隆 教練</div><div class="tb-role">天母・週三競技組（共同）</div></div></div>
+  <span class="logout" onclick="doLogout()">登出</span>
+</div>
+<div class="content">
+  <div class="notice">今日你有 1 堂課。下次比賽任務：4/27 U8 vs ZYES，08:00集合。</div>
+  <div class="card"><div class="card-title">今日課表</div>
+    <div class="row"><div class="av" style="background:var(--am-l);color:var(--am-d)">主</div><div class="ri"><div class="rn">天母週日幼兒B 16:00–17:30</div><div class="rm">12人・甯柏安已請假 <span class="badge b-ok">已點名</span></div></div></div>
+  </div>
+  <div class="match-card">
+    <div class="match-hd">
+      <div class="match-date">4/27（日）<span class="badge b-nv" style="margin-left:4px">U8・五人制</span></div>
+      <div class="match-vs">SCS vs ZYES</div>
+      <div class="match-meta"><span class="badge b-am">場次 B-089</span> <span class="badge b-gray">黑色球衣</span></div>
+    </div>
+    <div class="match-body">
+      <div class="match-info-row"><span>集合時間</span><span>08:00</span></div>
+      <div class="match-info-row"><span>比賽時間</span><span>09:00</span></div>
+      <div class="match-info-row"><span>地點</span><span>新北市立乙場</span></div>
+      <a class="map-link" href="https://maps.google.com" target="_blank"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>開啟地圖</a>
+    </div>
+  </div>
+</div>
+<nav class="bnav">
+  <button class="nb active"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>今日課表</button>
+</nav>
+</div>
+
+<!-- PARENT -->
+<div class="screen" id="s-parent">
+<div class="topbar">
+  <div class="tb-l"><div class="tb-av" id="p-av" style="background:#E6F1FB;color:#0C447C">張</div><div><div class="tb-name" id="p-name-top">學生</div><div class="tb-role" id="p-class-top">班級</div></div></div>
+  <span class="logout" onclick="doLogout()">登出</span>
+</div>
+<div class="content">
+  <!-- 總覽 -->
+  <div id="p-home">
+    <div id="p-warn" class="notice-w" style="display:none"></div>
+    <!-- 配件到貨通知 -->
+    <div id="p-delivery-notice" class="notice" style="display:none"></div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-n" id="p-att">0</div><div class="stat-l">已出席</div></div>
+      <div class="stat"><div class="stat-n" id="p-rem" style="color:var(--nv)">0</div><div class="stat-l">剩餘堂</div></div>
+      <div class="stat"><div class="stat-n" id="p-abs" style="color:var(--rd)">0</div><div class="stat-l">請假次</div></div>
+      <div class="stat"><div class="stat-n" id="p-mk" style="color:var(--pu)">0</div><div class="stat-l">待補課</div></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:13px;font-weight:600">課程進度</span><span class="badge" id="p-rem-badge"></span></div>
+      <div class="prog-labels"><span id="p-prog-txt">0 / 10 堂</span><span id="p-prog-pct">0%</span></div>
+      <div class="prog-bar"><div class="prog-fill" id="p-prog" style="width:0%"></div></div>
+    </div>
+    <div class="card"><div class="card-title">最近出席紀錄</div><div id="p-att-list"></div></div>
+  </div>
+  <!-- 比賽 -->
+  <div id="p-match" style="display:none">
+    <div id="p-match-list"></div>
+    <div id="p-no-match" style="display:none;text-align:center;padding:32px 16px;color:var(--g4);font-size:13px">目前無即將到來的比賽</div>
+  </div>
+  <!-- 繳費 -->
+  <div id="p-fee" style="display:none">
+    <div id="p-fee-unpaid">
+      <div class="fee-hero" id="p-fee-hero" style="background:var(--nv);border-radius:var(--rlg);padding:18px 16px;margin-bottom:10px;color:white">
+        <div style="font-size:12px;opacity:.75;margin-bottom:4px">本期應繳金額</div>
+        <div style="font-size:34px;font-weight:700;margin-bottom:2px" id="p-fee-amt">$0</div>
+        <div style="font-size:12px;opacity:.7" id="p-fee-note"></div>
+        <div style="display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.2);color:white;margin-top:8px;font-weight:600">待繳費</div>
+      </div>
+      <div class="card"><div class="card-title">匯款資訊</div>
+        <div style="font-size:12px;color:var(--g6);margin-bottom:10px;line-height:1.6">匯款完成後，請點選下方「通知已繳費」並輸入帳號末五碼。</div>
+        <div class="bank-box"><div class="bank-name">國泰世華銀行（013）</div><div class="bank-num">013-123456-78901</div></div>
+        <div class="bank-box"><div class="bank-name">玉山銀行（808）</div><div class="bank-num">808-098765-43210</div></div>
+      </div>
+      <div class="card" id="p-pay-form">
+        <div class="card-title">通知已繳費</div>
+        <div style="font-size:12px;color:var(--g6);margin-bottom:10px">請輸入匯款帳號末五碼</div>
+        <input class="five-inp" id="p-five" type="text" maxlength="5" inputmode="numeric" placeholder="_ _ _ _ _" oninput="chkFive()">
+        <div style="font-size:11px;color:var(--g4);text-align:center;margin-top:4px">例：帳號末碼 <strong>12345</strong> 則輸入 12345</div>
+        <button class="btn-gn" id="p-pay-btn" disabled onclick="doPayNotify()">通知行政已繳費</button>
+      </div>
+      <div id="p-pay-ok" style="display:none"><div class="done-card"><div class="done-ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><p style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--nv)">通知已送出</p><p style="font-size:13px;color:var(--g6);line-height:1.6">行政確認後將更新狀態<br>如有疑問：0919-166-711</p></div></div>
+    </div>
+    <div id="p-fee-paid" style="display:none">
+      <div style="background:var(--gn);border-radius:var(--rlg);padding:18px 16px;margin-bottom:10px;color:white">
+        <div style="font-size:12px;opacity:.75;margin-bottom:4px">本期費用</div>
+        <div style="font-size:34px;font-weight:700;margin-bottom:2px" id="p-paid-amt">$0</div>
+        <div style="font-size:12px;opacity:.7" id="p-paid-note"></div>
+        <div style="display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.3);color:white;margin-top:8px;font-weight:600">已繳費 ✓</div>
+      </div>
+      <div class="card" style="text-align:center;padding:20px"><p style="font-size:14px;color:var(--g6)">本期費用已繳清，感謝！</p></div>
+    </div>
+  </div>
+  <!-- 請假 -->
+  <div id="p-absence" style="display:none">
+    <div class="notice">請假申請送出後，行政將即時收到通知，教練端也會自動標記。</div>
+    <div class="card"><div class="card-title">申請請假</div>
+      <div class="fg"><label class="fl">請假日期</label><input class="fi-sm" style="width:100%" type="date" id="pa-date"></div>
+      <div class="fg"><label class="fl">請假原因</label><select class="fi-sm" style="width:100%" id="pa-reason" onchange="paReason()"><option value="">請選擇</option><option>生病</option><option>出遊 / 家庭活動</option><option>學校活動</option><option>比賽 / 其他運動賽事</option><option>其他</option></select></div>
+      <div id="pa-other-wrap" style="display:none"><div class="fg"><label class="fl">說明</label><input class="fi-sm" style="width:100%" type="text" placeholder="請說明"></div></div>
+      <div class="fg"><label class="fl">補課意願</label><select class="fi-sm" style="width:100%"><option>希望安排補課</option><option>折抵下期（不補課）</option><option>待確認</option></select></div>
+      <button class="btn-p" style="margin-top:12px" onclick="doAbsence()">送出請假申請</button>
+      <div class="success-msg" id="pa-ok">請假申請已送出！</div>
+    </div>
+    <div class="card"><div class="card-title">請假紀錄</div><div id="p-abs-list"></div></div>
+  </div>
+  <!-- 配件訂購 -->
+  <div id="p-acc" style="display:none">
+    <div class="notice">訂購後行政確認，出貨後教練會在上課時交給您。</div>
+    <div id="p-acc-ready" class="delivery-alert" style="display:none">
+      <div class="delivery-alert-title">配件已到，請盡快索取！</div>
+      <div class="delivery-alert-body" id="p-acc-ready-body"></div>
+    </div>
+    <div class="card"><div class="card-title">選購配件</div>
+      <div id="acc-list"></div>
+      <div class="order-total"><span>訂單總計</span><span id="acc-total">$0</span></div>
+      <div id="acc-order-form" style="display:none;margin-top:12px">
+        <div class="fg"><label class="fl">訂購人姓名</label><input class="fi-sm" style="width:100%" type="text" id="acc-buyer" placeholder="家長姓名"></div>
+        <div class="fg"><label class="fl">聯絡電話</label><input class="fi-sm" style="width:100%" type="tel" id="acc-phone" placeholder="09xx-xxx-xxx"></div>
+        <div class="fg"><label class="fl">備註（尺寸、客製姓名等）</label><textarea class="fi-sm" style="width:100%;min-height:60px;resize:vertical" id="acc-note" placeholder="例：球衣尺寸 S、印製名字：張小明"></textarea></div>
+        <button class="btn-p" onclick="submitOrder()">確認送出訂單</button>
+        <div class="success-msg" id="acc-ok">訂單已送出！行政將盡快確認。</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">我的訂單</div>
+      <div id="p-my-orders">
+        <div style="border-bottom:.5px solid var(--g1);padding:10px 0">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+            <div><div style="font-size:13px;font-weight:600">黑色球衣球褲 × 1</div><div style="font-size:11px;color:var(--g4);margin-top:2px">$1,000・4/15 訂購</div></div>
+            <span class="badge b-ok">已出貨</span>
+          </div>
+          <div class="notice-w" style="margin-bottom:0;font-size:11px;padding:6px 10px">已出貨，請在上課時和教練索取</div>
+        </div>
+      </div>
+    </div>
+    <!-- 配件款項通知行政 -->
+    <div class="card">
+      <div class="card-title">通知配件款項已繳</div>
+      <div style="font-size:12px;color:var(--g6);margin-bottom:12px;line-height:1.6">若已完成配件費用匯款，請輸入帳號末五碼通知行政核對。</div>
+      <div class="bank-box"><div class="bank-name">國泰世華銀行（013）</div><div class="bank-num">013-123456-78901</div></div>
+      <div class="bank-box"><div class="bank-name">玉山銀行（808）</div><div class="bank-num">808-098765-43210</div></div>
+      <div id="acc-pay-form">
+        <input class="five-inp" id="acc-five" type="text" maxlength="5" inputmode="numeric" placeholder="_ _ _ _ _" oninput="chkAccFive()" style="margin-top:10px">
+        <div style="font-size:11px;color:var(--g4);text-align:center;margin-top:4px">請輸入匯款帳號末五碼</div>
+        <button class="btn-gn" id="acc-pay-btn" disabled onclick="doAccPayNotify()">通知行政已繳配件款</button>
+      </div>
+      <div id="acc-pay-ok" style="display:none">
+        <div class="done-card" style="margin-top:0">
+          <div class="done-ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <p style="font-size:15px;font-weight:700;margin-bottom:6px;color:var(--nv)">通知已送出</p>
+          <p style="font-size:12px;color:var(--g6);line-height:1.6">行政確認後將更新付款狀態</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<nav class="bnav">
+  <button class="nb active" onclick="pTab(this,'p-home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>總覽</button>
+  <button class="nb" onclick="pTab(this,'p-match')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>比賽</button>
+  <button class="nb" onclick="pTab(this,'p-fee')"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>繳費</button>
+  <button class="nb" onclick="pTab(this,'p-absence')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/></svg>請假</button>
+  <button class="nb" onclick="pTab(this,'p-acc')"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>配件</button>
+</nav>
+</div>
+
+</div><!-- .app -->
+<script>
+var APPS_SCRIPT_URL='https://docs.google.com/spreadsheets/d/1t3EcUoMctzRpfMo_WWvzA2M_2qGkbfQNn9sKxIBUEF8/edit';
+var DEFAULT_PWD='scsfc2020';
+var pendingRole=null,curParent=null;
+var waiState={};
+var pendingJerseyNum=null,pendingJerseyStudent=null;
+
+// 球衣號碼資料庫（整個俱樂部）
+var JERSEY_DB={
+  7:{name:'張鈞傑',grade:'3年級'},
+  22:{name:'黃浚宸',grade:'3年級'},
+  32:{name:'陳祈睿',grade:'4年級'},
+  50:{name:'張諺霖',grade:'5年級'},
+  86:{name:'林昱廷',grade:'3年級'},
+  25:{name:'鄒厚穀',grade:'5年級'},
+  13:{name:'吳振曦',grade:'2年級'},
+  99:{name:'范皓翔',grade:'2年級'},
+  39:{name:'趙柏勛',grade:'3年級'},
+  65:{name:'佘昭毅',grade:'2年級'},
+  52:{name:'胡振曦',grade:'6年級'},
+  88:{name:'周紘緯',grade:'3年級'}
+};
+
+// 配件清單
+var ACCESSORIES=[
+  {name:'黑色球衣球褲',price:1000,custom:false},
+  {name:'黑色全套球衣球褲（客製化姓名）',price:1100,custom:true},
+  {name:'黑色長襪',price:200,custom:false},
+  {name:'白色球衣球褲',price:1000,custom:false},
+  {name:'白色全套球衣球褲（客製化姓名）',price:1100,custom:true},
+  {name:'白色長襪',price:200,custom:false},
+  {name:'SCS紀念運動毛巾',price:350,custom:false},
+  {name:'SCS客製化號碼包',price:1300,custom:false},
+  {name:'POLO衫+褲子',price:1050,custom:false},
+  {name:'護脛',price:100,custom:false},
+  {name:'SCS 4號低彈跳足球',price:1150,custom:false},
+  {name:'SCS 4號高彈跳足球',price:1100,custom:false},
+  {name:'SCS體驗活動加購高彈跳足球',price:500,custom:false},
+  {name:'SCS體驗活動加購低彈跳足球',price:550,custom:false},
+  {name:'2024龍年限定款球衣（可客製化姓名）',price:1100,custom:true},
+  {name:'2025蛇年限定款球衣深色款（可客製化姓名）',price:1100,custom:true},
+  {name:'2025蛇年限定款球衣淺色款（可客製化姓名）',price:1100,custom:true},
+  {name:'SCS團隊/加油團T恤',price:750,custom:false},
+  {name:'SCS雙面訂制替補背心',price:400,custom:false}
+];
+var accQty={};
+
+// 家長 demo 資料
+var PARENT_DB={
+  '張鈞傑':{
+    bday:'2015-06-12',cls:'北大週六國小 15:30–17:00',
+    att:7,total:10,abs:2,mk_pending:1,fee:4500,paid:false,feeNote:'1.5hr × 10堂',
+    jersey:7,
+    matches:[{date:'4/20（日）',opp:'海山國小',group:'U10',rule:'八人制',gather:'08:30',kickoff:'09:00',venue:'板橋國民運動中心',mapUrl:'https://maps.google.com',jersey:'黑色',seq:'A-052',coach:'楊鈞崴（崴崴）'}],
+    attLog:[{d:'4/19',s:'請假',n:'生病'},{d:'4/12',s:'出席',n:''},{d:'4/5',s:'出席',n:''},{d:'3/29',s:'出席',n:''},{d:'3/22',s:'請假',n:'出遊'},{d:'3/15',s:'出席',n:''}],
+    absLog:[{d:'4/19',r:'生病',m:'待安排',ok:false},{d:'3/22',r:'出遊',m:'折抵下期',ok:true}],
+    accDelivery:[{item:'黑色球衣球褲',status:'shipped'}]
+  },
+  '甯柏安':{
+    bday:'2019-03-08',cls:'天母週日幼兒B 16:00–17:30',
+    att:8,total:10,abs:1,mk_pending:0,fee:4500,paid:true,feeNote:'1.5hr × 10堂',
+    jersey:null,matches:[],
+    attLog:[{d:'4/20',s:'請假',n:'折抵下期'},{d:'4/13',s:'出席',n:''},{d:'4/6',s:'出席',n:''},{d:'3/30',s:'出席',n:''},{d:'3/23',s:'出席',n:''},{d:'3/16',s:'出席',n:''}],
+    absLog:[{d:'4/20',r:'家庭活動',m:'折抵下期',ok:true}],
+    accDelivery:[]
+  }
+};
+
+// 點名狀態
+var SC={p:['var(--gn-l)','var(--gn-d)','#97C459','出'],k:['var(--am-l)','var(--am-d)','var(--am)','假'],a:['var(--rd-l)','var(--rd-d)','var(--rd)','缺'],o:['var(--g1)','var(--g6)','var(--g4)','他']};
+var SCls={p:'sp',k:'sk',a:'sa',o:'so'};
+
+function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});var el=document.getElementById(id);if(el)el.classList.add('active')}
+function doLogout(){show('s-login');curParent=null;var e=document.getElementById('p-err');if(e)e.style.display='none'}
+
+// 密碼
+function askPwd(role){
+  pendingRole=role;
+  var labels={admin:'行政人員',wai:'楊鈞崴 教練',long:'楊鈞隆 教練'};
+  document.getElementById('pwd-who').textContent=labels[role]||role;
+  document.getElementById('pwd-inp').value='';
+  document.getElementById('pwd-err').style.display='none';
+  document.getElementById('pwd-overlay').classList.add('open');
+  setTimeout(function(){document.getElementById('pwd-inp').focus()},150);
+}
+function closePwd(){document.getElementById('pwd-overlay').classList.remove('open')}
+function submitPwd(){
+  var val=document.getElementById('pwd-inp').value;
+  if(val===DEFAULT_PWD){var role=pendingRole;pendingRole=null;closePwd();if(role)show('s-'+role);}
+  else{document.getElementById('pwd-err').style.display='block';document.getElementById('pwd-inp').value='';document.getElementById('pwd-inp').focus();}
+}
+function toggleEye(){var inp=document.getElementById('pwd-inp');inp.type=inp.type==='password'?'text':'password';document.getElementById('pwd-eye').style.opacity=inp.type==='text'?'0.4':'1';}
+
+// Tab 切換
+function aTab(btn,id){
+  document.querySelectorAll('#s-admin .nb').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');
+  ['a-dash','a-match','a-match-edit','a-jersey','a-acc-admin','a-absence','a-hours'].forEach(function(x){var el=document.getElementById(x);if(el)el.style.display='none'});
+  var t=document.getElementById(id);if(t)t.style.display='block';
+  // 切回配件頁時顯示列表，隱藏詳情
+  if(id==='a-acc-admin'){
+    var l=document.getElementById('acc-admin-list');if(l)l.style.display='block';
+    var d=document.getElementById('acc-admin-detail');if(d)d.style.display='none';
+  }
+}
+function cTab(who,btn,id){
+  document.querySelectorAll('#s-'+who+' .nb').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');
+  var ids=who==='wai'?['wai-today','wai-match','wai-hist']:['long-today'];
+  ids.forEach(function(x){var el=document.getElementById(x);if(el)el.style.display='none'});
+  var t=document.getElementById(id);if(t)t.style.display='block';
+}
+function pTab(btn,id){
+  document.querySelectorAll('#s-parent .nb').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');
+  ['p-home','p-match','p-fee','p-absence','p-acc'].forEach(function(x){var el=document.getElementById(x);if(el)el.style.display='none'});
+  var t=document.getElementById(id);if(t)t.style.display='block';
+}
+
+// 點名
+function wSet(name,st){
+  waiState[name]=st;
+  var av=document.getElementById('wa-'+name),ni=document.getElementById('wn-'+name),row=document.getElementById('wr-'+name);
+  var cfg=SC[st];
+  if(av&&cfg){av.style.background=cfg[0];av.style.color=cfg[1];av.style.borderColor=cfg[2];av.textContent=cfg[3];}
+  if(ni)ni.style.display=st==='o'?'block':'none';
+  if(row){var keys=['p','k','a','o'];row.querySelectorAll('.sb').forEach(function(b,i){b.className='sb'+(keys[i]===st?' '+SCls[st]:'')})}
+  updateWai();
+}
+function updateWai(){
+  var vals=Object.values(waiState);
+  var pre=vals.filter(function(v){return v==='p'}).length;
+  var abs=2+vals.filter(function(v){return v==='a'||v==='k'}).length;
+  var oth=vals.filter(function(v){return v==='o'}).length;
+  var el;
+  el=document.getElementById('w-pre');if(el)el.textContent=pre;
+  el=document.getElementById('w-abs');if(el)el.textContent=abs;
+  el=document.getElementById('w-oth');if(el)el.textContent=oth;
+  el=document.getElementById('wai-sum');if(el)el.innerHTML='已填 <strong>'+vals.length+'/5</strong> 人・出席 '+pre+'　請假/缺席 '+abs+'　其他 '+oth;
+}
+function waiSubmit(){
+  var sa=document.getElementById('wai-submit-area');if(sa)sa.style.display='none';
+  var done=document.getElementById('wai-done');if(done)done.style.display='block';
+  var pre=Object.values(waiState).filter(function(v){return v==='p'}).length+2;
+  var txt=document.getElementById('wai-done-txt');if(txt)txt.textContent='出席 '+pre+' 人 · 資料已同步行政後台';
+}
+
+// 比賽資料（demo）
+var MATCHES=[
+  {seq:'A-052',group:'U10',date:'2026-04-20',rule:'八人制',gather:'08:30',kickoff:'09:00',opp:'海山國小',venue:'板橋國民運動中心',map:'https://maps.google.com',jersey:'黑色',coach:'楊鈞崴（崴崴）',players:['張鈞傑','黃浚宸','陳祈睿','林昱廷','廖翊軒','蔡夏恩','黃浚禕']},
+  {seq:'B-089',group:'U8',date:'2026-04-27',rule:'五人制',gather:'08:00',kickoff:'09:00',opp:'ZYES',venue:'新北市立乙場',map:'https://maps.google.com',jersey:'黑色',coach:'楊鈞隆（隆隆）',players:['吳振曦','林祐生','李品謙','陳允鑠','林羿斈']}
+];
+var editingMatchIdx=null;
+
+function openMatchEdit(idx){
+  editingMatchIdx=idx;
+  var m=MATCHES[idx];
+  // 隱藏 a-match，顯示 a-match-edit
+  var am=document.getElementById('a-match');if(am)am.style.display='none';
+  var ame=document.getElementById('a-match-edit');if(ame)ame.style.display='block';
+  var t=document.getElementById('me-title');if(t)t.textContent=m.group+' vs '+m.opp+' 編輯';
+  // 填入資料
+  var fields={seq:'me-seq',date:'me-date',gather:'me-gather',kickoff:'me-kickoff',opp:'me-opp',venue:'me-venue',map:'me-map'};
+  Object.keys(fields).forEach(function(k){var el=document.getElementById(fields[k]);if(el)el.value=m[k]||'';});
+  // select 欄位
+  var selects={group:'me-group',rule:'me-rule',jersey:'me-jersey',coach:'me-coach'};
+  Object.keys(selects).forEach(function(k){
+    var el=document.getElementById(selects[k]);
+    if(el){for(var i=0;i<el.options.length;i++){if(el.options[i].text===m[k]||el.options[i].value===m[k]){el.selectedIndex=i;break;}}}
+  });
+  // 球員 chips
+  var chips=document.querySelectorAll('#me-players .chip');
+  chips.forEach(function(c){c.classList.toggle('sel',m.players.indexOf(c.textContent)>=0);});
+  var ok=document.getElementById('me-ok');if(ok)ok.style.display='none';
+}
+
+function closeMatchEdit(){
+  var am=document.getElementById('a-match');if(am)am.style.display='block';
+  var ame=document.getElementById('a-match-edit');if(ame)ame.style.display='none';
+}
+
+function saveMatchEdit(){
+  if(editingMatchIdx===null)return;
+  var m=MATCHES[editingMatchIdx];
+  m.seq=document.getElementById('me-seq').value||m.seq;
+  m.date=document.getElementById('me-date').value||m.date;
+  m.gather=document.getElementById('me-gather').value||m.gather;
+  m.kickoff=document.getElementById('me-kickoff').value||m.kickoff;
+  m.opp=document.getElementById('me-opp').value||m.opp;
+  m.venue=document.getElementById('me-venue').value||m.venue;
+  m.map=document.getElementById('me-map').value||m.map;
+  m.group=document.getElementById('me-group').value;
+  m.rule=document.getElementById('me-rule').value;
+  m.jersey=document.getElementById('me-jersey').value;
+  m.coach=document.getElementById('me-coach').value;
+  m.players=[];
+  document.querySelectorAll('#me-players .chip.sel').forEach(function(c){m.players.push(c.textContent);});
+  var ok=document.getElementById('me-ok');if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none';},2500);}
+}
+
+function deleteMatch(){
+  if(editingMatchIdx===null)return;
+  if(!confirm('確定要刪除這場比賽嗎？'))return;
+  MATCHES.splice(editingMatchIdx,1);
+  closeMatchEdit();
+  alert('比賽已刪除');
+}
+
+// 訂單資料（demo）
+var ORDERS=[
+  {buyer:'張大明',student:'張鈞傑',phone:'0912-345-678',date:'4/15',items:[{name:'黑色球衣球褲',price:1000,qty:1}],note:'球衣尺寸 M',payStatus:'unpaid',shipStatus:'shipped',fiveDigit:''},
+  {buyer:'甯媽媽',student:'甯柏安',phone:'0987-654-321',date:'4/12',items:[{name:'黑色長襪',price:200,qty:2}],note:'',payStatus:'paid',shipStatus:'shipped',fiveDigit:'12345'},
+  {buyer:'林爸爸',student:'林承慷',phone:'0933-111-222',date:'4/10',items:[{name:'SCS 4號高彈跳足球',price:1100,qty:1}],note:'',payStatus:'paid',shipStatus:'received',fiveDigit:'67890'}
+];
+var editingOrderIdx=null;
+var STATUS_LABELS={unpaid:'未付款',paid:'已付款',pending:'待出貨',shipped:'已出貨',received:'已取貨'};
+var STATUS_BADGE={unpaid:'b-am',paid:'b-ok',pending:'b-gray',shipped:'b-ok',received:'b-gray'};
+
+function openOrder(idx){
+  editingOrderIdx=idx;
+  var o=ORDERS[idx];
+  var l=document.getElementById('acc-admin-list');if(l)l.style.display='none';
+  var d=document.getElementById('acc-admin-detail');if(d)d.style.display='block';
+  // 填入資料
+  var el;
+  el=document.getElementById('od-title');if(el)el.textContent=o.student+' 的訂單';
+  el=document.getElementById('od-buyer');if(el)el.textContent=o.buyer;
+  el=document.getElementById('od-student');if(el)el.textContent=o.student;
+  el=document.getElementById('od-phone');if(el)el.textContent=o.phone;
+  el=document.getElementById('od-date');if(el)el.textContent=o.date;
+  // 品項
+  var items=document.getElementById('od-items');
+  if(items){items.innerHTML=o.items.map(function(it){return '<div class="hist-row"><span>'+it.name+' × '+it.qty+'</span><span style="font-weight:600">$'+(it.price*it.qty).toLocaleString()+'</span></div>';}).join('');}
+  var total=o.items.reduce(function(s,it){return s+it.price*it.qty},0);
+  el=document.getElementById('od-total');if(el)el.textContent='$'+total.toLocaleString();
+  var nw=document.getElementById('od-note-wrap');var nn=document.getElementById('od-note');
+  if(nw&&nn){if(o.note){nw.style.display='block';nn.textContent=o.note;}else nw.style.display='none';}
+  // 付款狀態
+  var pi=document.getElementById('od-pay-info');
+  if(pi){pi.innerHTML=o.fiveDigit?'家長已傳末五碼：<strong>'+o.fiveDigit+'</strong>，請核對後標記已付款。':'家長尚未傳送末五碼。';}
+  refreshOrderBtns(o);
+  // 可編輯品項
+  var ei=document.getElementById('od-edit-items');
+  if(ei){ei.innerHTML=o.items.map(function(it,i){return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid var(--g1)"><span style="font-size:13px;flex:1">'+it.name+'</span><div style="display:flex;align-items:center;gap:8px"><button class="qty-btn" onclick="editOrderQty('+i+',-1)">−</button><div class="qty-num" id="od-qty-'+i+'">'+it.qty+'</div><button class="qty-btn" onclick="editOrderQty('+i+',1)">+</button></div></div>';}).join('');}
+  var ok=document.getElementById('od-ok');if(ok)ok.style.display='none';
+  var eok=document.getElementById('od-edit-ok');if(eok)eok.style.display='none';
+}
+
+function refreshOrderBtns(o){
+  var payBtns=['od-btn-unpaid','od-btn-paid'];
+  var shipBtns=['od-btn-pending','od-btn-shipped','od-btn-received'];
+  var payMap={unpaid:'od-btn-unpaid',paid:'od-btn-paid'};
+  var shipMap={pending:'od-btn-pending',shipped:'od-btn-shipped',received:'od-btn-received'};
+  payBtns.forEach(function(id){var el=document.getElementById(id);if(el)el.className='sb';});
+  shipBtns.forEach(function(id){var el=document.getElementById(id);if(el)el.className='sb';});
+  var pb=document.getElementById(payMap[o.payStatus]);if(pb)pb.className='sb sp';
+  var sb=document.getElementById(shipMap[o.shipStatus]);if(sb)sb.className='sb sp';
+}
+
+function setOrderStatus(st){
+  if(editingOrderIdx===null)return;
+  var o=ORDERS[editingOrderIdx];
+  if(st==='unpaid'||st==='paid')o.payStatus=st;
+  else o.shipStatus=st;
+  refreshOrderBtns(o);
+  var ok=document.getElementById('od-ok');if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none';},1500);}
+}
+
+function editOrderQty(itemIdx,delta){
+  if(editingOrderIdx===null)return;
+  var o=ORDERS[editingOrderIdx];
+  o.items[itemIdx].qty=Math.max(0,o.items[itemIdx].qty+delta);
+  var el=document.getElementById('od-qty-'+itemIdx);if(el)el.textContent=o.items[itemIdx].qty;
+}
+
+function saveOrderEdit(){
+  var ok=document.getElementById('od-edit-ok');if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none';},1500);}
+}
+
+function closeOrder(){
+  var l=document.getElementById('acc-admin-list');if(l)l.style.display='block';
+  var d=document.getElementById('acc-admin-detail');if(d)d.style.display='none';
+}
+
+// 配件付款通知（家長）
+function chkAccFive(){var inp=document.getElementById('acc-five');if(!inp)return;inp.value=inp.value.replace(/\D/g,'');var btn=document.getElementById('acc-pay-btn');if(btn)btn.disabled=inp.value.length!==5;}
+function doAccPayNotify(){
+  var five=document.getElementById('acc-five')?document.getElementById('acc-five').value:'';
+  var form=document.getElementById('acc-pay-form');if(form)form.style.display='none';
+  var ok=document.getElementById('acc-pay-ok');if(ok)ok.style.display='block';
+}
+
+
+
+function toggleChip(el){el.classList.toggle('sel')}
+function saveMatch(){var ok=document.getElementById('m-ok');if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none'},3000)}}
+
+// 球衣號碼
+function buildJerseyGrid(selectedStudent,currentNum){
+  var grid=document.getElementById('j-grid');if(!grid)return;
+  grid.innerHTML='';
+  for(var i=1;i<=50;i++){
+    var taken=JERSEY_DB[i];
+    var isMine=currentNum&&currentNum===i;
+    var div=document.createElement('div');
+    div.className='jnum'+(isMine?' mine':taken?' taken':' avail');
+    div.textContent=i;
+    div.title=taken?(taken.name+' ('+taken.grade+')'):'';
+    if(!taken||isMine){
+      (function(num){div.onclick=function(){selectJersey(num,selectedStudent,currentNum)}})(i);
+    }
+    grid.appendChild(div);
+  }
+}
+function loadJerseyStudent(){
+  var sel=document.getElementById('j-student');if(!sel||!sel.value)return;
+  var parts=sel.value.split('|');
+  var name=parts[0],grade=parts[1],currentNum=parts[2]==='null'?null:parseInt(parts[2]);
+  var cur=document.getElementById('j-current');
+  if(cur)cur.textContent=currentNum?'No.'+currentNum:'未指派';
+  buildJerseyGrid(name,currentNum);
+  var w=document.getElementById('j-warn');if(w)w.style.display='none';
+  var btn=document.getElementById('j-save-btn');if(btn)btn.disabled=true;
+  pendingJerseyNum=null;pendingJerseyStudent={name:name,grade:grade,current:currentNum};
+}
+function selectJersey(num,studentName,currentNum){
+  pendingJerseyNum=num;
+  var conflict=JERSEY_DB[num];
+  var warn=document.getElementById('j-warn');
+  var btn=document.getElementById('j-save-btn');
+  if(conflict&&conflict.name!==studentName){
+    // 衝突！但仍允許選擇，顯示警告
+    if(warn){warn.style.display='block';warn.innerHTML='⚠ 此球衣號碼（No.'+num+'）可能和<strong>'+conflict.grade+'的'+conflict.name+'</strong>球員重複，請確認後再儲存。';}
+  } else {
+    if(warn)warn.style.display='none';
+  }
+  if(btn)btn.disabled=false;
+  // 更新格子視覺
+  document.querySelectorAll('.jnum').forEach(function(el,i){
+    var n=i+1;
+    if(n===num){el.style.outline='2px solid var(--nv)';el.style.outlineOffset='2px';}
+    else{el.style.outline='none';}
+  });
+}
+function confirmJersey(){
+  if(!pendingJerseyNum||!pendingJerseyStudent)return;
+  var conflict=JERSEY_DB[pendingJerseyNum];
+  if(conflict&&conflict.name!==pendingJerseyStudent.name){
+    // 有衝突，跳 modal
+    document.getElementById('jersey-warn-body').innerHTML='你選擇的 <strong>No.'+pendingJerseyNum+'</strong> 可能和<br><strong>'+conflict.grade+' 的 '+conflict.name+' 球員</strong>重複。<br><br>確定要強制使用此號碼嗎？';
+    document.getElementById('jersey-overlay').classList.add('open');
+  } else {
+    doSaveJersey();
+  }
+}
+function closeJerseyWarn(){document.getElementById('jersey-overlay').classList.remove('open')}
+function forceJersey(){closeJerseyWarn();doSaveJersey();}
+function doSaveJersey(){
+  if(pendingJerseyStudent&&pendingJerseyStudent.current)delete JERSEY_DB[pendingJerseyStudent.current];
+  JERSEY_DB[pendingJerseyNum]={name:pendingJerseyStudent.name,grade:pendingJerseyStudent.grade};
+  alert('No.'+pendingJerseyNum+' 已指派給 '+pendingJerseyStudent.name);
+  var btn=document.getElementById('j-save-btn');if(btn)btn.disabled=true;
+  pendingJerseyNum=null;
+}
+
+// 配件
+function buildAccList(){
+  var el=document.getElementById('acc-list');if(!el)return;
+  el.innerHTML='';
+  ACCESSORIES.forEach(function(acc,idx){
+    accQty[idx]=0;
+    var div=document.createElement('div');div.className='acc-item';
+    div.innerHTML='<div><div class="acc-name">'+acc.name+'</div><div class="acc-price">$'+acc.price.toLocaleString()+(acc.custom?' · 可客製化':'')+'</div></div><div class="acc-qty"><button class="qty-btn" onclick="changeQty('+idx+',-1)">−</button><div class="qty-num" id="qty-'+idx+'">0</div><button class="qty-btn" onclick="changeQty('+idx+',1)">+</button></div>';
+    el.appendChild(div);
+  });
+}
+function changeQty(idx,delta){
+  accQty[idx]=Math.max(0,(accQty[idx]||0)+delta);
+  var el=document.getElementById('qty-'+idx);if(el)el.textContent=accQty[idx];
+  updateTotal();
+}
+function updateTotal(){
+  var total=0;
+  Object.keys(accQty).forEach(function(idx){total+=accQty[idx]*(ACCESSORIES[idx].price)});
+  var el=document.getElementById('acc-total');if(el)el.textContent='$'+total.toLocaleString();
+  var form=document.getElementById('acc-order-form');if(form)form.style.display=total>0?'block':'none';
+}
+function submitOrder(){
+  var ok=document.getElementById('acc-ok');if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none'},3000)}
+}
+
+// 家長登入
+function parentLogin(){
+  var name=(document.getElementById('p-name').value||'').trim();
+  var bday=document.getElementById('p-bday').value;
+  var err=document.getElementById('p-err');
+  var s=PARENT_DB[name];
+  if(!s||s.bday!==bday){if(err)err.style.display='block';return;}
+  if(err)err.style.display='none';
+  curParent=name;loadParent(name);show('s-parent');
+}
+function pQuick(n,b){var pn=document.getElementById('p-name');var pb=document.getElementById('p-bday');if(pn)pn.value=n;if(pb)pb.value=b;parentLogin();}
+
+function loadParent(name){
+  var s=PARENT_DB[name];var el;
+  el=document.getElementById('p-av');if(el)el.textContent=name[0];
+  el=document.getElementById('p-name-top');if(el)el.textContent=name;
+  el=document.getElementById('p-class-top');if(el)el.textContent=s.cls;
+  // stats
+  el=document.getElementById('p-att');if(el)el.textContent=s.att;
+  var rem=s.total-s.att;
+  el=document.getElementById('p-rem');if(el)el.textContent=rem;
+  el=document.getElementById('p-abs');if(el)el.textContent=s.abs;
+  el=document.getElementById('p-mk');if(el)el.textContent=s.mk_pending;
+  // progress
+  var pct=Math.round(s.att/s.total*100);
+  el=document.getElementById('p-prog-txt');if(el)el.textContent='已上 '+s.att+' / '+s.total+' 堂';
+  el=document.getElementById('p-prog-pct');if(el)el.textContent=pct+'%';
+  var pf=document.getElementById('p-prog');
+  if(pf){pf.style.width=pct+'%';pf.className='prog-fill'+(rem<=2?' d':rem<=4?' w':'');}
+  var rb=document.getElementById('p-rem-badge');
+  if(rb){if(rem===0){rb.textContent='已上完，請續費';rb.className='badge b-red';}else if(rem<=2){rb.textContent='剩 '+rem+' 堂';rb.className='badge b-red';}else if(rem<=4){rb.textContent='剩 '+rem+' 堂';rb.className='badge b-am';}else{rb.textContent='剩 '+rem+' 堂';rb.className='badge b-ok';}}
+  var warn=document.getElementById('p-warn');
+  if(warn){if(rem<=3){warn.style.display='block';warn.textContent=rem===0?'課程已上完！請聯繫行政辦理續費。':'課程剩餘 '+rem+' 堂，建議提前續費。';}else warn.style.display='none';}
+  // 配件到貨通知
+  var delivered=s.accDelivery?s.accDelivery.filter(function(a){return a.status==='shipped'}):[];
+  var dn=document.getElementById('p-delivery-notice');
+  if(dn){if(delivered.length>0){dn.style.display='block';dn.textContent='配件「'+delivered.map(function(a){return a.item}).join('、')+'」已到，請盡快和教練索取！';}else dn.style.display='none';}
+  var ar=document.getElementById('p-acc-ready');
+  if(ar){if(delivered.length>0){ar.style.display='block';var arb=document.getElementById('p-acc-ready-body');if(arb)arb.textContent='「'+delivered.map(function(a){return a.item}).join('、')+'」已出貨，請在上課時和教練索取。';}else ar.style.display='none';}
+  // 出席記錄
+  var al=document.getElementById('p-att-list');
+  if(al)al.innerHTML=s.attLog.slice(0,6).map(function(a){var cls=a.s==='出席'?'b-ok':a.s==='補課'?'b-pu':'b-red';return '<div class="hist-row"><span>'+a.d+(a.n?' · '+a.n:'')+'</span><span class="badge '+cls+'">'+a.s+'</span></div>';}).join('');
+  // 繳費
+  if(s.paid){var up=document.getElementById('p-fee-unpaid');if(up)up.style.display='none';var pd=document.getElementById('p-fee-paid');if(pd)pd.style.display='block';el=document.getElementById('p-paid-amt');if(el)el.textContent='$'+s.fee.toLocaleString();el=document.getElementById('p-paid-note');if(el)el.textContent=s.feeNote;}
+  else{var up2=document.getElementById('p-fee-unpaid');if(up2)up2.style.display='block';var pd2=document.getElementById('p-fee-paid');if(pd2)pd2.style.display='none';el=document.getElementById('p-fee-amt');if(el)el.textContent='$'+s.fee.toLocaleString();el=document.getElementById('p-fee-note');if(el)el.textContent=s.feeNote;var pok=document.getElementById('p-pay-ok');if(pok)pok.style.display='none';var pf2=document.getElementById('p-pay-form');if(pf2)pf2.style.display='block';var pfive=document.getElementById('p-five');if(pfive){pfive.value='';pfive.disabled=false;}var pbtn=document.getElementById('p-pay-btn');if(pbtn)pbtn.disabled=true;}
+  // 請假
+  var abl=document.getElementById('p-abs-list');
+  if(abl)abl.innerHTML=s.absLog.length?s.absLog.map(function(a){return '<div class="hist-row"><div><div style="font-size:13px;font-weight:600">'+a.d+' · '+a.r+'</div><div style="font-size:11px;color:var(--g4);margin-top:2px">'+a.m+'</div></div><span class="badge '+(a.ok?'b-ok':'b-am')+'">'+(a.ok?'已確認':'待確認')+'</span></div>';}).join(''):'<p style="font-size:13px;color:var(--g4);padding:8px 0">尚無請假紀錄</p>';
+  // 比賽
+  var ml=document.getElementById('p-match-list');
+  var nm=document.getElementById('p-no-match');
+  if(ml&&s.matches){
+    if(s.matches.length===0){if(ml)ml.innerHTML='';if(nm)nm.style.display='block';}
+    else{if(nm)nm.style.display='none';ml.innerHTML=s.matches.map(function(m){return '<div class="match-card"><div class="match-hd"><div class="match-date">'+m.date+' <span class="badge b-nv" style="margin-left:4px">'+m.group+'・'+m.rule+'</span></div><div class="match-vs">SCS vs '+m.opp+'</div><div class="match-meta"><span class="badge b-am">場次 '+m.seq+'</span> <span class="badge b-gray">'+m.jersey+'球衣</span></div></div><div class="match-body"><div class="match-info-row"><span>集合時間</span><span>'+m.gather+'</span></div><div class="match-info-row"><span>比賽時間</span><span>'+m.kickoff+'</span></div><div class="match-info-row"><span>地點</span><span>'+m.venue+'</span></div><div class="match-info-row"><span>帶隊教練</span><span>'+m.coach+'</span></div><a class="map-link" href="'+m.mapUrl+'" target="_blank"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--nv);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>開啟地圖導航</a></div></div>';}).join('');}
+  }
+  var pad=document.getElementById('pa-date');if(pad)pad.valueAsDate=new Date();
+  // 配件清單
+  buildAccList();
+}
+
+function chkFive(){var inp=document.getElementById('p-five');if(!inp)return;inp.value=inp.value.replace(/\D/g,'');var btn=document.getElementById('p-pay-btn');if(btn)btn.disabled=inp.value.length!==5;}
+function doPayNotify(){var pok=document.getElementById('p-pay-ok');if(pok)pok.style.display='block';var pf=document.getElementById('p-pay-form');if(pf)pf.style.display='none';}
+function paReason(){var v=document.getElementById('pa-reason').value;var w=document.getElementById('pa-other-wrap');if(w)w.style.display=v==='其他'?'block':'none';}
+function doAbsence(){
+  var date=document.getElementById('pa-date')?document.getElementById('pa-date').value:'';
+  var reason=document.getElementById('pa-reason')?document.getElementById('pa-reason').value:'';
+  if(!date||!reason){alert('請填寫日期與原因');return;}
+  var ok=document.getElementById('pa-ok');if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none'},3000);}
+  var pad=document.getElementById('pa-date');if(pad)pad.valueAsDate=new Date();
+  var par=document.getElementById('pa-reason');if(par)par.value='';
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  var today=new Date();
+  var ld=document.getElementById('l-date');if(ld)ld.valueAsDate=today;
+  // 比賽日期預設一週後
+  var mdate=document.getElementById('m-date');
+  if(mdate){var next=new Date();next.setDate(next.getDate()+7);mdate.valueAsDate=next;}
+  var pad=document.getElementById('pa-date');if(pad)pad.valueAsDate=today;
+});
+</script>
+</body>
+</html>
