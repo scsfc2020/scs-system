@@ -530,21 +530,18 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 <div class="content-np">
   <!-- 點名 -->
   <div class="content" id="c-tab-roll">
+    <div style="background:var(--dark);border-radius:var(--r8);padding:12px 14px;margin-bottom:12px">
+      <div style="font-size:10px;color:rgba(255,255,255,.5);letter-spacing:.05em;margin-bottom:8px">上課日期</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="font-size:18px;font-weight:800;color:white;flex:1" id="c-lesson-date-display">—</div>
+        <input type="date" id="c-lesson-date-input" style="background:rgba(255,255,255,.12);border:.5px solid rgba(255,255,255,.25);border-radius:var(--r8);padding:8px 10px;color:white;font-size:13px;font-family:var(--font);font-weight:600" onchange="onDateChange()">
+      </div>
+    </div>
     <div class="fg">
-      <label class="fl">選擇今日班級</label>
+      <label class="fl">選擇班級</label>
       <select class="fi" id="c-class-sel" onchange="loadClassStudents()">
         <option value="">— 請選擇 —</option>
       </select>
-    </div>
-    <div id="c-date-bar" class="hidden" style="background:var(--dark);border-radius:var(--r8);padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:10px;color:rgba(255,255,255,.5);letter-spacing:.05em;margin-bottom:2px">今日上課日期</div>
-        <div style="font-size:16px;font-weight:800;color:white" id="c-lesson-date-display"></div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:10px;color:rgba(255,255,255,.5);margin-bottom:2px">更改日期</div>
-        <input type="date" id="c-lesson-date-input" style="background:rgba(255,255,255,.1);border:.5px solid rgba(255,255,255,.2);border-radius:var(--r4);padding:4px 8px;color:white;font-size:12px;font-family:var(--font)" onchange="updateLessonDate()">
-      </div>
     </div>
     <div id="c-class-info" class="hidden">
       <div id="c-trial-notice" class="hidden">
@@ -1298,31 +1295,35 @@ function fillCoachClassSelect() {
   });
 }
 
-function updateLessonDate() {
+function refreshDateDisplay() {
   var inp = document.getElementById('c-lesson-date-input');
   var disp = document.getElementById('c-lesson-date-display');
-  if (inp && disp) {
-    G.coach.lessonDate = inp.value;
-    // 格式化顯示
-    var d = new Date(inp.value + 'T00:00:00');
-    var days = ['日','一','二','三','四','五','六'];
-    disp.textContent = inp.value + '（週' + days[d.getDay()] + '）';
-  }
+  if (!inp || !disp) return;
+  var val = inp.value || G.coach.lessonDate || new Date().toISOString().slice(0,10);
+  G.coach.lessonDate = val;
+  if (inp.value !== val) inp.value = val;
+  var d = new Date(val + 'T00:00:00');
+  var days = ['日','一','二','三','四','五','六'];
+  disp.textContent = val + '  週' + days[d.getDay()];
+}
+function onDateChange() {
+  var inp = document.getElementById('c-lesson-date-input');
+  if (inp) G.coach.lessonDate = inp.value;
+  refreshDateDisplay();
+  // 有選班級的話重新載入
+  var sel = document.getElementById('c-class-sel');
+  if (sel && sel.value) { loadClassStudents(); }
 }
 function loadClassStudents() {
   var sel = document.getElementById('c-class-sel');
   var code = sel ? sel.value : '';
-  if (!code) { hideEl('c-class-info'); hideEl('c-date-bar'); return; }
+  if (!code) { hideEl('c-class-info'); return; }
   G.coach.classCode = code;
   G.coach.rollState = {};
   G.coach.rollNotes = {};
-  // 初始化日期為今天
-  var todayStr = new Date().toISOString().slice(0,10);
-  if (!G.coach.lessonDate) G.coach.lessonDate = todayStr;
-  var dateInp = document.getElementById('c-lesson-date-input');
-  if (dateInp) { dateInp.value = G.coach.lessonDate; }
-  showEl('c-date-bar');
-  updateLessonDate();
+  // 確認日期已初始化
+  if (!G.coach.lessonDate) G.coach.lessonDate = new Date().toISOString().slice(0,10);
+  refreshDateDisplay();
   loading(true);
   api({ action: 'getClassStudents', classCode: code, lessonDate: G.coach.lessonDate }, function(r) {
     loading(false);
@@ -1871,6 +1872,11 @@ function updateOrderEl(btn) {
   updateOrder(parseInt(btn.dataset.ridx), btn.dataset.field, btn.dataset.val);
 }
 document.addEventListener('DOMContentLoaded', function() {
+  // 初始化教練日期
+  G.coach.lessonDate = new Date().toISOString().slice(0,10);
+  var di = document.getElementById('c-lesson-date-input');
+  if (di) di.value = G.coach.lessonDate;
+  refreshDateDisplay();
   // 預設今日
   var today = new Date().toISOString().slice(0, 10);
   ['pa-date', 'pa-makeup-date', 'tr-date'].forEach(function(id) {
