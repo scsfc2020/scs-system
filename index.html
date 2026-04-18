@@ -767,6 +767,7 @@ var G = {
   },
   coach: {
     classCode: '',
+    lessonDate: '',     // 點名日期（yyyy-MM-dd）
     rollState: {},      // { 學生姓名: 'present'|'leave'|'absent'|'other' }
     rollNotes: {}       // { 學生姓名: '備註' }
   },
@@ -947,10 +948,10 @@ function doStaffLogin() {
         G.session.account = account; G.session.classCodes = r2.classCodes || [];
         setText('c-topbar-name', r2.name);
         show('s-coach');
-        // 初始化日期
-        if (!G.coach.lessonDate) G.coach.lessonDate = new Date().toISOString().slice(0,10);
+        // 初始化日期為今天
+        G.coach.lessonDate = new Date().toISOString().slice(0,10);
         var di = document.getElementById('c-lesson-date-input');
-        if (di) di.value = G.coach.lessonDate;
+        if (di) { di.value = G.coach.lessonDate; }
         refreshDateDisplay();
         // 若設定已載入就直接填班級，否則載入後再填
         if (G.classes.length) {
@@ -974,7 +975,7 @@ function doStaffLogin() {
 
 function doLogout() {
   G.session = { role: '', name: '', account: '', student: null, classCodes: [] };
-  G.coach = { classCode: '', rollState: {}, rollNotes: {} };
+  G.coach = { classCode: '', lessonDate: new Date().toISOString().slice(0,10), rollState: {}, rollNotes: {} };
   G.accQty = {};
   show('s-login');
 }
@@ -1317,15 +1318,21 @@ function fillCoachClassSelect() {
 }
 
 function refreshDateDisplay() {
+  // 確保 lessonDate 一定有值
+  if (!G.coach.lessonDate) {
+    G.coach.lessonDate = new Date().toISOString().slice(0,10);
+  }
   var inp = document.getElementById('c-lesson-date-input');
   var disp = document.getElementById('c-lesson-date-display');
-  if (!inp || !disp) return;
-  var val = inp.value || G.coach.lessonDate || new Date().toISOString().slice(0,10);
-  G.coach.lessonDate = val;
-  if (inp.value !== val) inp.value = val;
-  var d = new Date(val + 'T00:00:00');
-  var days = ['日','一','二','三','四','五','六'];
-  disp.textContent = val + '  週' + days[d.getDay()];
+  // inp 不存在（還在登入頁）時只更新 G.coach.lessonDate
+  if (!inp) return;
+  if (!inp.value) inp.value = G.coach.lessonDate;
+  G.coach.lessonDate = inp.value;
+  if (disp) {
+    var d = new Date(G.coach.lessonDate + 'T00:00:00');
+    var days = ['日','一','二','三','四','五','六'];
+    disp.textContent = G.coach.lessonDate + '  週' + days[d.getDay()];
+  }
 }
 function onDateChange() {
   var inp = document.getElementById('c-lesson-date-input');
@@ -1342,8 +1349,13 @@ function loadClassStudents() {
   G.coach.classCode = code;
   G.coach.rollState = {};
   G.coach.rollNotes = {};
-  // 確認日期已初始化
-  if (!G.coach.lessonDate) G.coach.lessonDate = new Date().toISOString().slice(0,10);
+  // 從 input 同步最新日期
+  var dateInp = document.getElementById('c-lesson-date-input');
+  if (dateInp && dateInp.value) {
+    G.coach.lessonDate = dateInp.value;
+  } else if (!G.coach.lessonDate) {
+    G.coach.lessonDate = new Date().toISOString().slice(0,10);
+  }
   refreshDateDisplay();
   loading(true);
   api({ action: 'getClassStudents', classCode: code, lessonDate: G.coach.lessonDate }, function(r) {
