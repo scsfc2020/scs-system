@@ -1371,9 +1371,15 @@ function loadClassStudents() {
   }
   refreshDateDisplay();
   loading(true);
+  console.log('getClassStudents 請求:', code, G.coach.lessonDate);
   api({ action: 'getClassStudents', classCode: code, lessonDate: G.coach.lessonDate }, function(r) {
     loading(false);
-    if (!r || !r.ok) { alert('載入失敗，請重試'); return; }
+    console.log('getClassStudents 回應:', r);
+    if (!r || !r.ok) {
+      var errMsg = r ? (r.error || JSON.stringify(r)) : '無回應（網路錯誤）';
+      alert('載入失敗：' + errMsg + '\n\n請確認：\n1. Apps Script 已重新部署\n2. 試算表工作表名稱正確\n3. 教練班級代碼與班級設定表一致');
+      return;
+    }
     G_lessonData = r;
     showLessonSummary(r);
   });
