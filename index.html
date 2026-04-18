@@ -745,6 +745,18 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 </div>
 </div>
 
+
+<!-- 出勤摘要 Modal -->
+<div class="overlay" id="lesson-summary-modal">
+<div class="modal">
+  <div class="modal-title" id="ls-title">本日出勤摘要</div>
+  <div id="ls-body"></div>
+  <div class="modal-btns" style="margin-top:16px">
+    <button class="btn btn-outline" onclick="closeModal('lesson-summary-modal')">取消</button>
+    <button class="btn btn-dark" onclick="closeModal('lesson-summary-modal');startRoll()">開始點名</button>
+  </div>
+</div>
+</div>
 </div><!-- #app -->
 
 <script>
@@ -1342,13 +1354,14 @@ function onDateChange() {
   var sel = document.getElementById('c-class-sel');
   if (sel && sel.value) { loadClassStudents(); }
 }
+// 快取 API 回傳資料（摘要視窗確認後再渲染點名表）
+var G_lessonData = null;
+
 function loadClassStudents() {
   var sel = document.getElementById('c-class-sel');
   var code = sel ? sel.value : '';
   if (!code) { hideEl('c-class-info'); return; }
   G.coach.classCode = code;
-  G.coach.rollState = {};
-  G.coach.rollNotes = {};
   // 從 input 同步最新日期
   var dateInp = document.getElementById('c-lesson-date-input');
   if (dateInp && dateInp.value) {
@@ -1360,101 +1373,191 @@ function loadClassStudents() {
   loading(true);
   api({ action: 'getClassStudents', classCode: code, lessonDate: G.coach.lessonDate }, function(r) {
     loading(false);
-    if (!r || !r.ok) return;
-    showEl('c-class-info');
-    hideEl('c-done');
-    showEl('c-submit-area');
-
-    // 體驗
-    var trials = r.trialsToday || [];
-    var trialEl = document.getElementById('c-trial-notice');
-    var trialList = document.getElementById('c-trial-list');
-    if (trials.length) {
-      showEl('c-trial-notice');
-      trialList.innerHTML = trials.map(function(t) {
-        return '<div class="row-item"><div class="row-av" style="background:var(--gold)">體</div><div class="row-body"><div class="row-name">' + t.childName + '</div><div class="row-sub">家長：' + t.parentName + ' ' + t.phone + '</div></div></div>';
-      }).join('');
-    } else hideEl('c-trial-notice');
-
-    // 補課
-    var makeups = r.makeupToday || [];
-    var mkEl = document.getElementById('c-makeup-notice');
-    var mkList = document.getElementById('c-makeup-list');
-    if (makeups.length) {
-      showEl('c-makeup-notice');
-      mkList.innerHTML = makeups.map(function(m) {
-        return '<div class="row-item"><div class="row-av" style="background:var(--mid)">補</div><div class="row-body"><div class="row-name">' + m.name + '</div><div class="row-sub">原班：' + m.originalClass + '</div></div></div>';
-      }).join('');
-    } else hideEl('c-makeup-notice');
-
-    // 請假
-    var absT = r.absToday || [];
-    var absEl = document.getElementById('c-abs-notice');
-    var absList = document.getElementById('c-abs-list');
-    if (absT.length) {
-      showEl('c-abs-notice');
-      absList.innerHTML = absT.map(function(a) {
-        return '<div class="row-item"><div class="row-av" style="background:var(--red)">假</div><div class="row-body"><div class="row-name">' + a.name + '</div><div class="row-sub">' + (a.reason || '已請假') + '</div></div></div>';
-      }).join('');
-    } else hideEl('c-abs-notice');
-
-    // 點名表
-    var absentNames = absT.map(function(a) { return a.name; });
-    // 已請假學生不從點名列表移除，改為在列表中標示
-    var students = r.students || [];
-    setText('c-tot', students.length);
-    setText('c-present', 0); setText('c-leave', 0); setText('c-absent', 0);
-    var rollEl = document.getElementById('c-roll-list');
-    if (!students.length) { rollEl.innerHTML = '<div class="empty-state">此班無學生資料</div>'; return; }
-        rollEl.innerHTML = '';
-    students.forEach(function(s) {
-      // 已請假的學生預設為「請假」狀態
-      var isAbsent = absentNames.indexOf(s.name) >= 0;
-      if (isAbsent && !G.coach.rollState[s.name]) {
-        G.coach.rollState[s.name] = 'leave';
-      }
-      var row = document.createElement('div');
-      row.className = 'roll-row'; row.id = 'rr-' + s.name;
-      var av = document.createElement('div');
-      av.className = 'roll-av' + (isAbsent ? ' leave' : ''); av.id = 'ra-' + s.name;
-      av.textContent = isAbsent ? '假' : s.name[0];
-      var body = document.createElement('div');
-      body.style.flex = '1';
-      var nameDiv = document.createElement('div');
-      nameDiv.className = 'roll-name'; nameDiv.textContent = s.name;
-      if (isAbsent) {
-        var absSpan = document.createElement('span');
-        absSpan.className = 'badge b-gold'; absSpan.textContent = '已請假';
-        absSpan.style.marginLeft = '6px';
-        nameDiv.appendChild(absSpan);
-      }
-      if (s.grade) {
-        var gradeSpan = document.createElement('span');
-        gradeSpan.className = 'badge b-gray'; gradeSpan.textContent = s.grade;
-        nameDiv.appendChild(document.createTextNode(' '));
-        nameDiv.appendChild(gradeSpan);
-      }
-      var btnsDiv = document.createElement('div');
-      btnsDiv.className = 'roll-btns';
-      [['present','出席'],['leave','請假'],['absent','缺席'],['other','其他']].forEach(function(pair) {
-        var btn = document.createElement('button');
-        btn.className = 'rb'; btn.textContent = pair[1];
-        btn.setAttribute('data-name', s.name);
-        btn.setAttribute('data-status', pair[0]);
-        btn.onclick = function() { setRoll(this.getAttribute('data-name'), this.getAttribute('data-status')); };
-        btnsDiv.appendChild(btn);
-      });
-      var noteInp = document.createElement('input');
-      noteInp.className = 'roll-note'; noteInp.id = 'rn-' + s.name; noteInp.placeholder = '備註（選填）';
-      body.appendChild(nameDiv);
-      body.appendChild(btnsDiv);
-      body.appendChild(noteInp);
-      row.appendChild(av);
-      row.appendChild(body);
-      rollEl.appendChild(row);
-    });
-    updateRollSummary(students);
+    if (!r || !r.ok) { alert('載入失敗，請重試'); return; }
+    G_lessonData = r;
+    showLessonSummary(r);
   });
+}
+
+function showLessonSummary(r) {
+  var students  = r.students  || [];
+  var absT      = r.absToday  || [];
+  var makeups   = r.makeupToday || [];
+  var trials    = r.trialsToday || [];
+  var absNames  = absT.map(function(a){ return a.name; });
+  var regularCnt = students.length;
+  var absCnt     = absT.length;
+  var makeupCnt  = makeups.length;
+  var trialCnt   = trials.length;
+  var totalExpect = regularCnt - absCnt + makeupCnt + trialCnt;
+
+  // 班級名稱
+  var sel = document.getElementById('c-class-sel');
+  var className = sel ? sel.options[sel.selectedIndex].text : '';
+
+  setText('ls-title', fmtDateTW(G.coach.lessonDate) + '  ' + className);
+
+  var body = document.getElementById('ls-body');
+
+  // 統計卡
+  var statsHtml = '<div class="stats" style="margin-bottom:14px">'
+    + '<div class="stat"><div class="stat-n">' + regularCnt + '</div><div class="stat-l">正課人數</div></div>'
+    + '<div class="stat"><div class="stat-n" style="color:var(--red)">' + absCnt + '</div><div class="stat-l">請假人數</div></div>'
+    + '<div class="stat"><div class="stat-n" style="color:var(--mid)">' + makeupCnt + '</div><div class="stat-l">補課人數</div></div>'
+    + '<div class="stat"><div class="stat-n" style="color:var(--gold)">' + trialCnt + '</div><div class="stat-l">體驗人數</div></div>'
+    + '</div>'
+    + '<div style="background:var(--dark);border-radius:var(--r8);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    + '<span style="font-size:12px;color:rgba(255,255,255,.6)">本日應到人數</span>'
+    + '<span style="font-size:20px;font-weight:800;color:white">' + totalExpect + ' 人</span>'
+    + '</div>';
+
+  // 請假名單
+  var absHtml = '';
+  if (absT.length) {
+    absHtml = '<div class="sec">請假名單</div><div class="card" style="padding:8px 12px">';
+    absT.forEach(function(a) {
+      absHtml += '<div class="row-item">'
+        + '<div class="row-av" style="background:var(--red);width:32px;height:32px;font-size:12px">' + a.name[0] + '</div>'
+        + '<div class="row-body"><div class="row-name" style="font-size:13px">' + a.name + '</div>'
+        + '<div class="row-sub">' + (a.reason || '請假') + (a.status === '待確認' ? '　<span class="badge b-gold">待確認</span>' : '') + '</div>'
+        + '</div></div>';
+    });
+    absHtml += '</div>';
+  }
+
+  // 補課名單
+  var mkHtml = '';
+  if (makeups.length) {
+    mkHtml = '<div class="sec">補課學員</div><div class="card" style="padding:8px 12px">';
+    makeups.forEach(function(m) {
+      mkHtml += '<div class="row-item">'
+        + '<div class="row-av" style="background:var(--mid);width:32px;height:32px;font-size:12px">' + m.name[0] + '</div>'
+        + '<div class="row-body"><div class="row-name" style="font-size:13px">' + m.name + '</div>'
+        + '<div class="row-sub">原班：' + m.originalClass + '</div>'
+        + '</div></div>';
+    });
+    mkHtml += '</div>';
+  }
+
+  // 體驗名單
+  var trHtml = '';
+  if (trials.length) {
+    trHtml = '<div class="sec">體驗學員</div><div class="card" style="padding:8px 12px">';
+    trials.forEach(function(t) {
+      trHtml += '<div class="row-item">'
+        + '<div class="row-av" style="background:var(--gold);width:32px;height:32px;font-size:12px">' + t.childName[0] + '</div>'
+        + '<div class="row-body"><div class="row-name" style="font-size:13px">' + t.childName + '</div>'
+        + '<div class="row-sub">家長：' + (t.parentName||'') + ' ' + (t.phone||'') + '</div>'
+        + '</div></div>';
+    });
+    trHtml += '</div>';
+  }
+
+  body.innerHTML = statsHtml + absHtml + mkHtml + trHtml;
+  showModal('lesson-summary-modal');
+}
+
+function startRoll() {
+  var r = G_lessonData;
+  if (!r) return;
+  var students = r.students || [];
+  var absT     = r.absToday || [];
+  var makeups  = r.makeupToday || [];
+  var trials   = r.trialsToday || [];
+
+  G.coach.rollState = {};
+  G.coach.rollNotes = {};
+
+  showEl('c-class-info');
+  hideEl('c-done');
+  showEl('c-submit-area');
+
+  // 體驗
+  var trialList = document.getElementById('c-trial-list');
+  if (trials.length) {
+    showEl('c-trial-notice');
+    trialList.innerHTML = trials.map(function(t) {
+      return '<div class="row-item"><div class="row-av" style="background:var(--gold)">體</div>'
+        + '<div class="row-body"><div class="row-name">' + t.childName + '</div>'
+        + '<div class="row-sub">家長：' + (t.parentName||'') + ' ' + (t.phone||'') + '</div>'
+        + '</div></div>';
+    }).join('');
+  } else hideEl('c-trial-notice');
+
+  // 補課
+  var mkList = document.getElementById('c-makeup-list');
+  if (makeups.length) {
+    showEl('c-makeup-notice');
+    mkList.innerHTML = makeups.map(function(m) {
+      return '<div class="row-item"><div class="row-av" style="background:var(--mid)">補</div>'
+        + '<div class="row-body"><div class="row-name">' + m.name + '</div>'
+        + '<div class="row-sub">原班：' + m.originalClass + '</div>'
+        + '</div></div>';
+    }).join('');
+  } else hideEl('c-makeup-notice');
+
+  // 請假列表（側邊顯示）
+  var absList = document.getElementById('c-abs-list');
+  if (absT.length) {
+    showEl('c-abs-notice');
+    absList.innerHTML = absT.map(function(a) {
+      return '<div class="row-item"><div class="row-av" style="background:var(--red)">假</div>'
+        + '<div class="row-body"><div class="row-name">' + a.name
+        + (a.status === '待確認' ? ' <span class="badge b-gold">待確認</span>' : '') + '</div>'
+        + '<div class="row-sub">' + (a.reason || '已請假') + '</div>'
+        + '</div></div>';
+    }).join('');
+  } else hideEl('c-abs-notice');
+
+  // 點名表（不預設任何狀態，由教練自行點選）
+  var absentNames = absT.map(function(a){ return a.name; });
+  setText('c-tot', students.length);
+  setText('c-present', 0); setText('c-leave', 0); setText('c-absent', 0);
+  var rollEl = document.getElementById('c-roll-list');
+  if (!students.length) { rollEl.innerHTML = '<div class="empty-state">此班無學生資料</div>'; return; }
+  rollEl.innerHTML = '';
+  students.forEach(function(s) {
+    var isAbsent = absentNames.indexOf(s.name) >= 0;
+    var row = document.createElement('div');
+    row.className = 'roll-row'; row.id = 'rr-' + s.name;
+    var av = document.createElement('div');
+    av.className = 'roll-av'; av.id = 'ra-' + s.name; av.textContent = s.name[0];
+    var body = document.createElement('div');
+    body.style.flex = '1';
+    var nameDiv = document.createElement('div');
+    nameDiv.className = 'roll-name'; nameDiv.textContent = s.name;
+    if (isAbsent) {
+      var absSpan = document.createElement('span');
+      absSpan.className = 'badge b-gold'; absSpan.textContent = '已請假';
+      absSpan.style.marginLeft = '6px';
+      nameDiv.appendChild(absSpan);
+    }
+    if (s.grade) {
+      var gradeSpan = document.createElement('span');
+      gradeSpan.className = 'badge b-gray'; gradeSpan.textContent = s.grade;
+      nameDiv.appendChild(document.createTextNode(' '));
+      nameDiv.appendChild(gradeSpan);
+    }
+    var btnsDiv = document.createElement('div');
+    btnsDiv.className = 'roll-btns';
+    [['present','出席'],['leave','請假'],['absent','缺席'],['other','其他']].forEach(function(pair) {
+      var btn = document.createElement('button');
+      btn.className = 'rb'; btn.textContent = pair[1];
+      btn.setAttribute('data-name', s.name);
+      btn.setAttribute('data-status', pair[0]);
+      btn.onclick = function() { setRoll(this.getAttribute('data-name'), this.getAttribute('data-status')); };
+      btnsDiv.appendChild(btn);
+    });
+    var noteInp = document.createElement('input');
+    noteInp.className = 'roll-note'; noteInp.id = 'rn-' + s.name; noteInp.placeholder = '備註（選填）';
+    body.appendChild(nameDiv);
+    body.appendChild(btnsDiv);
+    body.appendChild(noteInp);
+    row.appendChild(av);
+    row.appendChild(body);
+    rollEl.appendChild(row);
+  });
+  updateRollSummary(students);
 }
 
 function setRoll(name, status) {
@@ -1518,7 +1621,7 @@ function loadCoachMatches() {
     if (!r || !r.ok || !r.matches.length) { el.innerHTML = '<div class="empty-state">目前無即將到來的比賽</div>'; return; }
     el.innerHTML = r.matches.map(function(m) {
       return '<div class="match-card">'
-        + '<div class="match-head"><div class="match-date">' + m.date + '</div><div class="match-vs">SCS vs ' + m.opp + '</div></div>'
+        + '<div class="match-head"><div class="match-date">' + fmtDateTW(m.date) + '</div><div class="match-vs">SCS vs ' + m.opp + '</div></div>'
         + '<div class="match-body">'
         + '<div class="match-row"><span class="match-row-label">集合</span><span class="match-row-val">' + m.gather + '</span></div>'
         + '<div class="match-row"><span class="match-row-label">比賽</span><span class="match-row-val">' + m.kickoff + '</span></div>'
@@ -1536,7 +1639,7 @@ function loadCoachHours() {
     var el = document.getElementById('c-hours-list');
     if (!r || !r.ok || !r.hours.length) { el.innerHTML = '<div class="empty-state">尚無工時記錄</div>'; return; }
     el.innerHTML = r.hours.map(function(h) {
-      return '<div class="row-item"><div class="row-body"><div class="row-name">' + h.month + '</div></div><span class="badge b-dark">' + h.lessons + ' 堂</span></div>';
+      return '<div class="row-item"><div class="row-body"><div class="row-name">' + fmtMonthTW(h.month) + '</div></div><span class="badge b-dark">' + h.lessons + ' 堂</span></div>';
     }).join('');
   });
 }
