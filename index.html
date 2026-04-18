@@ -204,15 +204,15 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
     <div class="l-sec">選擇身份</div>
     <button class="rbtn" onclick="askPwd('admin')">
       <div class="r-av" style="background:#E6F1FB;color:#0C447C">行</div>
-      <div><div class="r-name">行政人員</div><div class="r-desc">游佳穎 · 管理全部班級與比賽</div></div>
+      <div><div class="r-name" id="login-admin-name">行政人員</div><div class="r-desc" id="admin-login-desc">管理全部班級與比賽</div></div>
     </button>
     <button class="rbtn" onclick="askPwd('wai')">
-      <div class="r-av" style="background:var(--gn-l);color:var(--gn-d)">崴</div>
-      <div><div class="r-name">楊鈞崴 教練</div><div class="r-desc">北大週六・週三競技組</div></div>
+      <div class="r-av" style="background:var(--gn-l);color:var(--gn-d)" id="login-wai-av">崴</div>
+      <div><div class="r-name" id="login-wai-name">教練一</div><div class="r-desc" id="login-wai-desc">載入中...</div></div>
     </button>
     <button class="rbtn" onclick="askPwd('long')">
-      <div class="r-av" style="background:var(--am-l);color:var(--am-d)">隆</div>
-      <div><div class="r-name">楊鈞隆 教練</div><div class="r-desc">天母・週三競技組（共同）</div></div>
+      <div class="r-av" style="background:var(--am-l);color:var(--am-d)" id="login-long-av">隆</div>
+      <div><div class="r-name" id="login-long-name">教練二</div><div class="r-desc" id="login-long-desc">載入中...</div></div>
     </button>
     <div class="divider"></div>
     <div class="l-sec">家長登入</div>
@@ -261,17 +261,17 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
 <!-- ADMIN -->
 <div class="screen" id="s-admin">
 <div class="topbar">
-  <div class="tb-l"><div class="tb-av" style="background:#E6F1FB;color:#0C447C">行</div><div><div class="tb-name">游佳穎</div><div class="tb-role">行政後台</div></div></div>
+  <div class="tb-l"><div class="tb-av" style="background:#E6F1FB;color:#0C447C">行</div><div><div class="tb-name" id="admin-name-top">行政</div><div class="tb-role">行政後台</div></div></div>
   <span class="logout" onclick="doLogout()">登出</span>
 </div>
 <div class="content">
   <!-- 總覽 -->
   <div id="a-dash">
     <div class="stat-grid">
-      <div class="stat"><div class="stat-n">80</div><div class="stat-l">學生總數</div></div>
-      <div class="stat"><div class="stat-n" style="color:var(--rd)">7</div><div class="stat-l">未繳費</div></div>
-      <div class="stat"><div class="stat-n" style="color:var(--am)">29</div><div class="stat-l">需續費</div></div>
-      <div class="stat"><div class="stat-n" style="color:var(--pu)">3</div><div class="stat-l">配件待取</div></div>
+      <div class="stat"><div class="stat-n" id="dash-total">-</div><div class="stat-l">學生總數</div></div>
+      <div class="stat"><div class="stat-n" id="dash-unpaid" style="color:var(--rd)">-</div><div class="stat-l">未繳費</div></div>
+      <div class="stat"><div class="stat-n" id="dash-renew" style="color:var(--am)">-</div><div class="stat-l">需續費</div></div>
+      <div class="stat"><div class="stat-n" id="dash-shipped" style="color:var(--pu)">-</div><div class="stat-l">配件待取</div></div>
     </div>
     <div class="sec-lbl">今日課程</div>
     <div class="card">
@@ -279,14 +279,9 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
       <div class="row"><div class="av" style="background:var(--gn-l);color:var(--gn-d)">雙</div><div class="ri"><div class="rn">北大週三競技組 18:45–20:45</div><div class="rm"><span class="badge b-teal">崴崴</span> <span class="badge b-am">隆隆</span> 雙師・17人</div></div><span class="badge b-nv">今晚</span></div>
     </div>
     <div class="sec-lbl">近期比賽</div>
-    <div class="card">
-      <div class="row"><div class="av" style="background:#E6F1FB;color:var(--nv2)">U10</div><div class="ri"><div class="rn">vs 海山國小 <span class="badge b-nv">4/20</span></div><div class="rm">八人制・09:00集合・甲場・7人參加</div></div><span class="badge b-ok">已設定</span></div>
-      <div class="row"><div class="av" style="background:#E6F1FB;color:var(--nv2)">U8</div><div class="ri"><div class="rn">vs ZYES <span class="badge b-am">4/27</span></div><div class="rm">五人制・08:00集合・乙場</div></div><span class="badge b-am">設定中</span></div>
-    </div>
+    <div class="card" id="dash-match-list"><p style="font-size:13px;color:var(--g4);text-align:center;padding:10px 0">載入中...</p></div>
     <div class="sec-lbl">待處理</div>
-    <div class="al-row al-red"><span>顏嵩又・天母週一・$3,500</span><button class="al-btn" onclick="this.closest('.al-row').style.opacity='.4';this.closest('.al-row').style.pointerEvents='none'">已繳 ✓</button></div>
-    <div class="al-row al-am"><span>張丹魁・北大週六國小・剩1堂</span><button class="al-btn">發提醒</button></div>
-    <div class="al-row al-gn"><span>配件：張鈞傑 黑色球衣球褲 → 已出貨</span><button class="al-btn">更新</button></div>
+    <div id="dash-alerts"><p style="font-size:13px;color:var(--g4);text-align:center;padding:10px 0">載入中...</p></div>
   </div>
   <!-- 比賽管理 -->
   <div id="a-match" style="display:none">
@@ -304,10 +299,10 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
       <div class="fg"><label class="fl">比賽地點</label><input class="fi-sm" style="width:100%" type="text" id="m-venue" placeholder="例：新北市立板橋國民運動中心"></div>
       <div class="fg"><label class="fl">地圖連結（Google Maps）</label><input class="fi-sm" style="width:100%" type="url" id="m-map" placeholder="https://maps.google.com/..."></div>
       <div class="fg"><label class="fl">球衣顏色</label><select class="fi-sm" style="width:100%" id="m-jersey"><option>黑色</option><option>白色</option></select></div>
-      <div class="fg"><label class="fl">帶隊教練</label><select class="fi-sm" style="width:100%" id="m-coach"><option>楊鈞崴（崴崴）</option><option>楊鈞隆（隆隆）</option><option>方銓</option></select></div>
+      <div class="fg"><label class="fl">帶隊教練</label><select class="fi-sm" style="width:100%" id="m-coach"><option value="">— 選擇教練 —</option></select></div>
       <div class="fg"><label class="fl">參加球員（可多選）</label>
         <div class="chips" id="m-players">
-          <button class="chip" onclick="toggleChip(this)">張鈞現</button><button class="chip" onclick="toggleChip(this)">張希鍒</button><button class="chip" onclick="toggleChip(this)">張丹魁</button><button class="chip" onclick="toggleChip(this)">林立學</button><button class="chip" onclick="toggleChip(this)">周紘緯</button><button class="chip" onclick="toggleChip(this)">廖翊軒</button><button class="chip" onclick="toggleChip(this)">陳祈睿</button><button class="chip" onclick="toggleChip(this)">黃浚宸</button><button class="chip" onclick="toggleChip(this)">黃浚禕</button><button class="chip" onclick="toggleChip(this)">蔡夏恩</button>
+          <p style="font-size:12px;color:var(--g4)">請先在試算表學生表建立資料，球員名單將自動帶入</p>
         </div>
       </div>
       <button class="btn-p" style="margin-top:4px" onclick="saveMatch()">儲存比賽</button>
@@ -315,18 +310,7 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
     </div>
     <div class="card">
       <div class="card-title">已設定比賽</div>
-      <div id="match-list-admin">
-        <div class="row" style="cursor:pointer" onclick="openMatchEdit(0)">
-          <div class="av" style="background:#E6F1FB;color:var(--nv2)">U10</div>
-          <div class="ri"><div class="rn">A-052 vs 海山國小</div><div class="rm">4/20・08:30集合・09:00・八人制・甲場・崴崴</div></div>
-          <span style="font-size:11px;color:var(--nv);font-weight:600;flex-shrink:0">編輯 ›</span>
-        </div>
-        <div class="row" style="cursor:pointer" onclick="openMatchEdit(1)">
-          <div class="av" style="background:#E6F1FB;color:var(--nv2)">U8</div>
-          <div class="ri"><div class="rn">B-089 vs ZYES</div><div class="rm">4/27・08:00集合・09:00・五人制・乙場・隆隆</div></div>
-          <span style="font-size:11px;color:var(--nv);font-weight:600;flex-shrink:0">編輯 ›</span>
-        </div>
-      </div>
+      <div id="match-list-admin"><p style="font-size:13px;color:var(--g4);text-align:center;padding:10px 0">尚無比賽資料</p></div>
     </div>
   </div>
 
@@ -349,10 +333,10 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
       <div class="fg"><label class="fl">比賽地點</label><input class="fi-sm" style="width:100%" type="text" id="me-venue"></div>
       <div class="fg"><label class="fl">地圖連結</label><input class="fi-sm" style="width:100%" type="url" id="me-map"></div>
       <div class="fg"><label class="fl">球衣顏色</label><select class="fi-sm" style="width:100%" id="me-jersey"><option>黑色</option><option>白色</option></select></div>
-      <div class="fg"><label class="fl">帶隊教練</label><select class="fi-sm" style="width:100%" id="me-coach"><option>楊鈞崴（崴崴）</option><option>楊鈞隆（隆隆）</option><option>方銓</option></select></div>
+      <div class="fg"><label class="fl">帶隊教練</label><select class="fi-sm" style="width:100%" id="me-coach"><option value="">— 選擇教練 —</option></select></div>
       <div class="fg"><label class="fl">參加球員（可多選）</label>
         <div class="chips" id="me-players">
-          <button class="chip" onclick="toggleChip(this)">張鈞現</button><button class="chip" onclick="toggleChip(this)">張希鍒</button><button class="chip" onclick="toggleChip(this)">張丹魁</button><button class="chip" onclick="toggleChip(this)">林立學</button><button class="chip" onclick="toggleChip(this)">周紘緯</button><button class="chip" onclick="toggleChip(this)">廖翊軒</button><button class="chip" onclick="toggleChip(this)">陳祈睿</button><button class="chip" onclick="toggleChip(this)">黃浚宸</button><button class="chip" onclick="toggleChip(this)">黃浚禕</button><button class="chip" onclick="toggleChip(this)">蔡夏恩</button>
+          <p style="font-size:12px;color:var(--g4)">球員名單從試算表讀取</p>
         </div>
       </div>
       <div style="display:flex;gap:8px;margin-top:14px">
@@ -370,13 +354,7 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
         <div class="fg"><label class="fl">選擇學生</label>
           <select class="fi-sm" style="width:100%" id="j-student" onchange="loadJerseyStudent()">
-            <option value="">— 選擇 —</option>
-            <option value="張鈞傑|3|7">張鈞傑（3年級）</option>
-            <option value="張鈞現|3|null">張鈞現（3年級）</option>
-            <option value="甯柏安|幼大|null">甯柏安（幼大班）</option>
-            <option value="林承慷|幼大|null">林承慷（幼大班）</option>
-            <option value="陳祈睿|4|32">陳祈睿（4年級）</option>
-            <option value="黃浚宸|3|22">黃浚宸（3年級）</option>
+            <option value="">— 選擇學生 —</option>
           </select>
         </div>
         <div class="fg"><label class="fl">現有背號</label><div id="j-current" style="font-size:20px;font-weight:700;color:var(--nv);padding:8px 0">—</div></div>
@@ -389,14 +367,7 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
     </div>
     <div class="card">
       <div class="card-title">球衣號碼總覽</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="j-overview">
-        <div style="background:var(--g0);border-radius:var(--rsm);padding:6px 10px;font-size:12px"><span style="font-weight:700;color:var(--nv)">No.7</span> 張鈞傑 <span style="color:var(--g4)">3年級</span></div>
-        <div style="background:var(--g0);border-radius:var(--rsm);padding:6px 10px;font-size:12px"><span style="font-weight:700;color:var(--nv)">No.22</span> 黃浚宸 <span style="color:var(--g4)">3年級</span></div>
-        <div style="background:var(--g0);border-radius:var(--rsm);padding:6px 10px;font-size:12px"><span style="font-weight:700;color:var(--nv)">No.32</span> 陳祈睿 <span style="color:var(--g4)">4年級</span></div>
-        <div style="background:var(--g0);border-radius:var(--rsm);padding:6px 10px;font-size:12px"><span style="font-weight:700;color:var(--nv)">No.50</span> 張諺霖 <span style="color:var(--g4)">5年級</span></div>
-        <div style="background:var(--g0);border-radius:var(--rsm);padding:6px 10px;font-size:12px"><span style="font-weight:700;color:var(--nv)">No.86</span> 林昱廷 <span style="color:var(--g4)">3年級</span></div>
-        <div style="background:var(--g0);border-radius:var(--rsm);padding:6px 10px;font-size:12px"><span style="font-weight:700;color:var(--am-d)">無背號</span> 張鈞現 <span style="color:var(--g4)">3年級</span></div>
-      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="j-overview"><p style="font-size:13px;color:var(--g4);padding:8px 0;grid-column:1/-1;text-align:center">尚無球衣號碼資料</p></div>
     </div>
   </div>
   <!-- 配件管理 -->
@@ -405,21 +376,7 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
     <div id="acc-admin-list">
       <div class="card">
         <div class="card-title">配件訂單列表<span style="font-size:11px;font-weight:400;color:var(--g4)">（點進去查看完整內容）</span></div>
-        <div class="row" style="cursor:pointer" onclick="openOrder(0)">
-          <div class="av" style="background:var(--am-l);color:var(--am-d)">張</div>
-          <div class="ri"><div class="rn">張鈞傑 <span class="badge b-am">未付款</span></div><div class="rm">黑色球衣球褲 × 1・$1,000・4/15 訂購</div></div>
-          <span style="font-size:11px;color:var(--nv);font-weight:600;flex-shrink:0">詳情 ›</span>
-        </div>
-        <div class="row" style="cursor:pointer" onclick="openOrder(1)">
-          <div class="av" style="background:var(--gn-l);color:var(--gn-d)">甯</div>
-          <div class="ri"><div class="rn">甯柏安 <span class="badge b-ok">已出貨</span></div><div class="rm">黑色長襪 × 2・$400・4/12 訂購</div></div>
-          <span style="font-size:11px;color:var(--nv);font-weight:600;flex-shrink:0">詳情 ›</span>
-        </div>
-        <div class="row" style="cursor:pointer" onclick="openOrder(2)">
-          <div class="av" style="background:var(--g1);color:var(--g6)">林</div>
-          <div class="ri"><div class="rn">林承慷 <span class="badge b-gray">已取貨</span></div><div class="rm">SCS 4號高彈跳足球 × 1・$1,100・4/10 訂購</div></div>
-          <span style="font-size:11px;color:var(--nv);font-weight:600;flex-shrink:0">詳情 ›</span>
-        </div>
+        <div id="order-list-rows"><p style="font-size:13px;color:var(--g4);text-align:center;padding:10px 0">尚無訂單</p></div>
       </div>
     </div>
 
@@ -477,12 +434,12 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
     <div class="notice">登記後，教練端「行政已標記請假」區塊自動顯示，教練無需再點。</div>
     <div class="card">
       <div class="card-title">登記請假</div>
-      <div class="fg"><label class="fl">班級</label><select class="fi-sm" style="width:100%"><option>北大週六國小 15:30-17:00</option><option>北大週三競技組 18:45-20:45</option><option>天母週日幼兒B 16:00-17:30</option></select></div>
-      <div class="fg"><label class="fl">學生</label><select class="fi-sm" style="width:100%"><option>張鈞傑</option><option>張鈞現</option><option>甯柏安</option><option>林承慷</option></select></div>
+      <div class="fg"><label class="fl">班級</label><select class="fi-sm" style="width:100%" id="ab-cls-select"><option value="">— 選擇班級 —</option></select></div>
+      <div class="fg"><label class="fl">學生</label><input class="fi-sm" style="width:100%" type="text" id="ab-student" placeholder="輸入學生姓名"></div>
       <div class="fg"><label class="fl">日期</label><input class="fi-sm" style="width:100%" type="date" id="ab-date"></div>
       <div class="fg"><label class="fl">原因</label><input class="fi-sm" style="width:100%" type="text" placeholder="例：生病、出遊"></div>
       <div class="fg"><label class="fl">補課安排</label><select class="fi-sm" style="width:100%"><option>尚未安排</option><option>安排補北大週三</option><option>折抵下期（最多2堂）</option></select></div>
-      <button class="btn-p" style="margin-top:12px" onclick="alert('已登記，教練端自動更新')">登記請假</button>
+      <button class="btn-p" style="margin-top:12px" onclick="adminSubmitAbsence()">登記請假</button>
     </div>
   </div>
   <!-- 工時 -->
@@ -508,40 +465,34 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
 <!-- COACH WAI -->
 <div class="screen" id="s-wai">
 <div class="topbar">
-  <div class="tb-l"><div class="tb-av" style="background:var(--gn-l);color:var(--gn-d)">崴</div><div><div class="tb-name">楊鈞崴 教練</div><div class="tb-role">北大週六・週三競技組</div></div></div>
+  <div class="tb-l"><div class="tb-av" style="background:var(--gn-l);color:var(--gn-d)" id="wai-av-top">崴</div><div><div class="tb-name" id="wai-name-top">崴崴教練</div><div class="tb-role" id="wai-role-top">教練點名・比賽資訊</div></div></div>
   <span class="logout" onclick="doLogout()">登出</span>
 </div>
 <div class="content">
   <div id="wai-today">
-    <!-- 配件到貨提示 -->
-    <div class="delivery-alert">
-      <div class="delivery-alert-title">配件到貨通知</div>
-      <div class="delivery-alert-body">張鈞傑 的「黑色球衣球褲」已到，請今日上課時交給家長。<button class="al-btn" style="margin-left:8px;border-color:var(--gn-d);color:var(--gn-d)" onclick="this.parentElement.parentElement.parentElement.style.display='none'">確認已交 ✓</button></div>
+    <div id="wai-delivery-notices"></div>
+    <div id="wai-match-notice"></div>
+    <!-- 班級選擇 -->
+    <div style="background:var(--g0);border:.5px solid var(--g2);border-radius:var(--rlg);padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:12px;color:var(--g6);margin-bottom:6px">選擇今日班級</div>
+      <select class="fi-sm" style="width:100%" id="wai-cls-select" onchange="loadCoachClass('wai')">
+        <option value="">— 選擇班級 —</option>
+      </select>
     </div>
-    <!-- 今日比賽提示 -->
-    <div class="notice">今日無比賽任務。下次比賽：4/20（日）U10 vs 海山國小，08:30集合</div>
-    <div style="background:var(--nv);border-radius:var(--rlg);padding:16px;margin-bottom:10px;color:white">
-      <div style="font-size:16px;font-weight:700;margin-bottom:4px">北大週六國小 15:30–17:00</div>
-      <div style="font-size:12px;opacity:.75;line-height:1.7">今日 · 1.5hr · 正式7人 · 2請假<div style="margin-top:4px"><span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.2);color:white;margin-right:4px;font-weight:600">崴崴（主）</span></div></div>
+    <div id="wai-class-hero" style="display:none;background:var(--nv);border-radius:var(--rlg);padding:16px;margin-bottom:10px;color:white">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px" id="wai-hero-name"></div>
+      <div style="font-size:12px;opacity:.75;line-height:1.7" id="wai-hero-meta"></div>
     </div>
     <div class="stat-grid">
-      <div class="stat"><div class="stat-n" id="w-tot">10</div><div class="stat-l">今日總人</div></div>
+      <div class="stat"><div class="stat-n" id="w-tot">0</div><div class="stat-l">今日總人</div></div>
       <div class="stat"><div class="stat-n" id="w-pre" style="color:var(--gn)">0</div><div class="stat-l">出席</div></div>
-      <div class="stat"><div class="stat-n" id="w-abs" style="color:var(--rd)">2</div><div class="stat-l">請假/缺席</div></div>
+      <div class="stat"><div class="stat-n" id="w-abs" style="color:var(--rd)">0</div><div class="stat-l">請假/缺席</div></div>
       <div class="stat"><div class="stat-n" id="w-oth" style="color:var(--pu)">0</div><div class="stat-l">其他</div></div>
     </div>
     <div class="sec-lbl">行政已標記請假</div>
-    <div class="card" style="border-color:#F09595">
-      <div class="row"><div class="av" style="background:var(--rd-l);color:var(--rd-d)">張</div><div class="ri"><div class="rn">張鈞傑 <span class="badge b-red">請假</span></div><div class="rm">生病・補課待安排・剩3堂</div></div></div>
-      <div class="row"><div class="av" style="background:var(--rd-l);color:var(--rd-d)">麥</div><div class="ri"><div class="rn">麥雅則 <span class="badge b-red">請假</span></div><div class="rm">出遊・安排補北大週三・剩4堂</div></div></div>
-    </div>
+    <div id="wai-absent-list" class="card" style="border-color:#F09595"><p style="font-size:13px;color:var(--g4);padding:4px 0">今日無預先請假</p></div>
     <div class="sec-lbl">正式學生點名</div>
-    <div class="card">
-      <div id="wr-張鈞現" class="row"><div class="av" id="wa-張鈞現">張</div><div class="ri"><div class="rn">張鈞現 <span class="badge b-am">剩3堂</span></div><div class="sbtns"><button class="sb" onclick="wSet('張鈞現','p')">出席</button><button class="sb" onclick="wSet('張鈞現','k')">請假</button><button class="sb" onclick="wSet('張鈞現','a')">缺席</button><button class="sb" onclick="wSet('張鈞現','o')">其他</button></div><input class="note-inp" id="wn-張鈞現" placeholder="備註（早退原因等）"></div></div>
-      <div id="wr-張希鍒" class="row"><div class="av" id="wa-張希鍒">張</div><div class="ri"><div class="rn">張希鍒 <span class="badge b-am">剩3堂</span></div><div class="sbtns"><button class="sb" onclick="wSet('張希鍒','p')">出席</button><button class="sb" onclick="wSet('張希鍒','k')">請假</button><button class="sb" onclick="wSet('張希鍒','a')">缺席</button><button class="sb" onclick="wSet('張希鍒','o')">其他</button></div><input class="note-inp" id="wn-張希鍒" placeholder="備註"></div></div>
-      <div id="wr-張丹魁" class="row"><div class="av" id="wa-張丹魁">張</div><div class="ri"><div class="rn">張丹魁 <span class="badge b-red">剩1堂</span></div><div class="sbtns"><button class="sb" onclick="wSet('張丹魁','p')">出席</button><button class="sb" onclick="wSet('張丹魁','k')">請假</button><button class="sb" onclick="wSet('張丹魁','a')">缺席</button><button class="sb" onclick="wSet('張丹魁','o')">其他</button></div><input class="note-inp" id="wn-張丹魁" placeholder="備註"></div></div>
-      <div id="wr-林立學" class="row"><div class="av" id="wa-林立學">林</div><div class="ri"><div class="rn">林立學 <span class="badge b-am">剩4堂</span></div><div class="sbtns"><button class="sb" onclick="wSet('林立學','p')">出席</button><button class="sb" onclick="wSet('林立學','k')">請假</button><button class="sb" onclick="wSet('林立學','a')">缺席</button><button class="sb" onclick="wSet('林立學','o')">其他</button></div><input class="note-inp" id="wn-林立學" placeholder="備註"></div></div>
-      <div id="wr-周紘緯" class="row"><div class="av" id="wa-周紘緯">周</div><div class="ri"><div class="rn">周紘緯 <span class="badge b-ok">剩5堂</span></div><div class="sbtns"><button class="sb" onclick="wSet('周紘緯','p')">出席</button><button class="sb" onclick="wSet('周紘緯','k')">請假</button><button class="sb" onclick="wSet('周紘緯','a')">缺席</button><button class="sb" onclick="wSet('周紘緯','o')">其他</button></div><input class="note-inp" id="wn-周紘緯" placeholder="備註"></div></div>
+    <div class="card" id="wai-list"><p style="font-size:13px;color:var(--g4);padding:8px 0;text-align:center">請先選擇班級</p></div>
     </div>
     <div id="wai-submit-area">
       <div class="submit-bar"><div id="wai-sum" style="font-size:12px;color:var(--g6);margin-bottom:8px;line-height:1.7">尚未開始點名</div><button class="btn-p" onclick="waiSubmit()">送出點名結果</button></div>
@@ -550,32 +501,7 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
   </div>
   <!-- 比賽 tab -->
   <div id="wai-match" style="display:none">
-    <div class="match-card">
-      <div class="match-hd">
-        <div class="match-date">4/20（日）<span class="badge b-nv" style="margin-left:4px">U10・八人制</span></div>
-        <div class="match-vs">SCS vs 海山國小</div>
-        <div class="match-meta"><span class="badge b-am">場次 A-052</span> <span class="badge b-gray">黑色球衣</span></div>
-      </div>
-      <div class="match-body">
-        <div class="match-info-row"><span>集合時間</span><span>08:30</span></div>
-        <div class="match-info-row"><span>比賽時間</span><span>09:00</span></div>
-        <div class="match-info-row"><span>地點</span><span>板橋國民運動中心</span></div>
-        <div class="match-info-row"><span>帶隊教練</span><span>楊鈞崴（崴崴）</span></div>
-        <a class="map-link" href="https://maps.google.com" target="_blank"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>開啟地圖</a>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">參加球員（7人）</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
-        <span class="badge b-nv" style="font-size:11px;padding:4px 10px">No.7 張鈞傑</span>
-        <span class="badge b-nv" style="font-size:11px;padding:4px 10px">No.22 黃浚宸</span>
-        <span class="badge b-nv" style="font-size:11px;padding:4px 10px">No.32 陳祈睿</span>
-        <span class="badge b-nv" style="font-size:11px;padding:4px 10px">No.86 林昱廷</span>
-        <span class="badge b-nv" style="font-size:11px;padding:4px 10px">廖翊軒</span>
-        <span class="badge b-nv" style="font-size:11px;padding:4px 10px">蔡夏恩</span>
-        <span class="badge b-nv" style="font-size:11px;padding:4px 10px">黃浚禕</span>
-      </div>
-    </div>
+    <div id="wai-match-detail"><p style="font-size:13px;color:var(--g4);text-align:center;padding:20px 0">目前無比賽資料</p></div>
   </div>
   <div id="wai-hist" style="display:none">
     <div class="card"><div class="card-title">本月工時</div>
@@ -595,30 +521,49 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
 <!-- COACH LONG -->
 <div class="screen" id="s-long">
 <div class="topbar">
-  <div class="tb-l"><div class="tb-av" style="background:var(--am-l);color:var(--am-d)">隆</div><div><div class="tb-name">楊鈞隆 教練</div><div class="tb-role">天母・週三競技組（共同）</div></div></div>
+  <div class="tb-l"><div class="tb-av" style="background:var(--am-l);color:var(--am-d)">隆</div><div><div class="tb-name" id="long-name-top">隆隆 教練</div><div class="tb-role">天母・週三競技組（共同）</div></div></div>
   <span class="logout" onclick="doLogout()">登出</span>
 </div>
 <div class="content">
-  <div class="notice">今日你有 1 堂課。下次比賽任務：4/27 U8 vs ZYES，08:00集合。</div>
-  <div class="card"><div class="card-title">今日課表</div>
-    <div class="row"><div class="av" style="background:var(--am-l);color:var(--am-d)">主</div><div class="ri"><div class="rn">天母週日幼兒B 16:00–17:30</div><div class="rm">12人・甯柏安已請假 <span class="badge b-ok">已點名</span></div></div></div>
+  <div id="long-today">
+    <div id="long-delivery-notices"></div>
+    <div id="long-match-notice"></div>
+    <div style="background:var(--g0);border:.5px solid var(--g2);border-radius:var(--rlg);padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:12px;color:var(--g6);margin-bottom:6px">選擇今日班級</div>
+      <select class="fi-sm" style="width:100%" id="long-cls-select" onchange="loadCoachClass('long')">
+        <option value="">— 選擇班級 —</option>
+      </select>
+    </div>
+    <div id="long-class-hero" style="display:none;background:var(--am-d);border-radius:var(--rlg);padding:16px;margin-bottom:10px;color:white">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px" id="long-hero-name"></div>
+      <div style="font-size:12px;opacity:.75;line-height:1.7" id="long-hero-meta"></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-n" id="l-tot">0</div><div class="stat-l">今日總人</div></div>
+      <div class="stat"><div class="stat-n" id="l-pre" style="color:var(--gn)">0</div><div class="stat-l">出席</div></div>
+      <div class="stat"><div class="stat-n" id="l-abs" style="color:var(--rd)">0</div><div class="stat-l">請假/缺席</div></div>
+      <div class="stat"><div class="stat-n" id="l-oth" style="color:var(--pu)">0</div><div class="stat-l">其他</div></div>
+    </div>
+    <div class="sec-lbl">行政已標記請假</div>
+    <div id="long-absent-list" class="card" style="border-color:#F09595"><p style="font-size:13px;color:var(--g4);padding:4px 0">今日無預先請假</p></div>
+    <div class="sec-lbl">正式學生點名</div>
+    <div class="card" id="long-list"><p style="font-size:13px;color:var(--g4);padding:8px 0;text-align:center">請先選擇班級</p></div>
+    <div id="long-submit-area">
+      <div class="submit-bar"><div id="long-sum" style="font-size:12px;color:var(--g6);margin-bottom:8px;line-height:1.7">尚未開始點名</div><button class="btn-p" onclick="longSubmit()">送出點名結果</button></div>
+    </div>
+    <div id="long-done" style="display:none"><div class="done-card"><div class="done-ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><p style="font-size:16px;font-weight:700;margin-bottom:6px">點名完成</p><p style="font-size:13px;color:var(--g6)" id="long-done-txt">資料已同步行政後台</p></div></div>
   </div>
-  <div class="match-card">
-    <div class="match-hd">
-      <div class="match-date">4/27（日）<span class="badge b-nv" style="margin-left:4px">U8・五人制</span></div>
-      <div class="match-vs">SCS vs ZYES</div>
-      <div class="match-meta"><span class="badge b-am">場次 B-089</span> <span class="badge b-gray">黑色球衣</span></div>
-    </div>
-    <div class="match-body">
-      <div class="match-info-row"><span>集合時間</span><span>08:00</span></div>
-      <div class="match-info-row"><span>比賽時間</span><span>09:00</span></div>
-      <div class="match-info-row"><span>地點</span><span>新北市立乙場</span></div>
-      <a class="map-link" href="https://maps.google.com" target="_blank"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>開啟地圖</a>
-    </div>
+  <div id="long-match" style="display:none">
+    <div id="long-match-detail"><p style="font-size:13px;color:var(--g4);text-align:center;padding:20px 0">目前無比賽資料</p></div>
+  </div>
+  <div id="long-hist" style="display:none">
+    <div class="card"><div class="card-title">本月工時</div><div id="long-hours-list"><p style="font-size:13px;color:var(--g4);padding:8px 0">載入中...</p></div></div>
   </div>
 </div>
 <nav class="bnav">
-  <button class="nb active"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>今日課表</button>
+  <button class="nb active" onclick="cTab('long',this,'long-today')"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>今日點名</button>
+  <button class="nb" onclick="cTab('long',this,'long-match')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>比賽資訊</button>
+  <button class="nb" onclick="cTab('long',this,'long-hist')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>紀錄/工時</button>
 </nav>
 </div>
 
@@ -718,15 +663,7 @@ body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;bac
     </div>
     <div class="card">
       <div class="card-title">我的訂單</div>
-      <div id="p-my-orders">
-        <div style="border-bottom:.5px solid var(--g1);padding:10px 0">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-            <div><div style="font-size:13px;font-weight:600">黑色球衣球褲 × 1</div><div style="font-size:11px;color:var(--g4);margin-top:2px">$1,000・4/15 訂購</div></div>
-            <span class="badge b-ok">已出貨</span>
-          </div>
-          <div class="notice-w" style="margin-bottom:0;font-size:11px;padding:6px 10px">已出貨，請在上課時和教練索取</div>
-        </div>
-      </div>
+      <div id="p-my-orders"><p style="font-size:13px;color:var(--g4);padding:8px 0">尚無訂單記錄</p></div>
     </div>
     <!-- 配件款項通知行政 -->
     <div class="card">
@@ -766,21 +703,8 @@ var pendingRole=null,curParent=null;
 var waiState={};
 var pendingJerseyNum=null,pendingJerseyStudent=null;
 
-// 球衣號碼資料庫（整個俱樂部）
-var JERSEY_DB={
-  7:{name:'張鈞傑',grade:'3年級'},
-  22:{name:'黃浚宸',grade:'3年級'},
-  32:{name:'陳祈睿',grade:'4年級'},
-  50:{name:'張諺霖',grade:'5年級'},
-  86:{name:'林昱廷',grade:'3年級'},
-  25:{name:'鄒厚穀',grade:'5年級'},
-  13:{name:'吳振曦',grade:'2年級'},
-  99:{name:'范皓翔',grade:'2年級'},
-  39:{name:'趙柏勛',grade:'3年級'},
-  65:{name:'佘昭毅',grade:'2年級'},
-  52:{name:'胡振曦',grade:'6年級'},
-  88:{name:'周紘緯',grade:'3年級'}
-};
+// 球衣號碼（從試算表讀取）
+var JERSEY_DB={};
 
 // 配件清單
 var ACCESSORIES=[
@@ -806,38 +730,31 @@ var ACCESSORIES=[
 ];
 var accQty={};
 
-// 家長 demo 資料
-var PARENT_DB={
-  '張鈞傑':{
-    bday:'2015-06-12',cls:'北大週六國小 15:30–17:00',
-    att:7,total:10,abs:2,mk_pending:1,fee:4500,paid:false,feeNote:'1.5hr × 10堂',
-    jersey:7,
-    matches:[{date:'4/20（日）',opp:'海山國小',group:'U10',rule:'八人制',gather:'08:30',kickoff:'09:00',venue:'板橋國民運動中心',mapUrl:'https://maps.google.com',jersey:'黑色',seq:'A-052',coach:'楊鈞崴（崴崴）'}],
-    attLog:[{d:'4/19',s:'請假',n:'生病'},{d:'4/12',s:'出席',n:''},{d:'4/5',s:'出席',n:''},{d:'3/29',s:'出席',n:''},{d:'3/22',s:'請假',n:'出遊'},{d:'3/15',s:'出席',n:''}],
-    absLog:[{d:'4/19',r:'生病',m:'待安排',ok:false},{d:'3/22',r:'出遊',m:'折抵下期',ok:true}],
-    accDelivery:[{item:'黑色球衣球褲',status:'shipped'}]
-  },
-  '甯柏安':{
-    bday:'2019-03-08',cls:'天母週日幼兒B 16:00–17:30',
-    att:8,total:10,abs:1,mk_pending:0,fee:4500,paid:true,feeNote:'1.5hr × 10堂',
-    jersey:null,matches:[],
-    attLog:[{d:'4/20',s:'請假',n:'折抵下期'},{d:'4/13',s:'出席',n:''},{d:'4/6',s:'出席',n:''},{d:'3/30',s:'出席',n:''},{d:'3/23',s:'出席',n:''},{d:'3/16',s:'出席',n:''}],
-    absLog:[{d:'4/20',r:'家庭活動',m:'折抵下期',ok:true}],
-    accDelivery:[]
-  }
-};
+// 家長資料（從試算表讀取）
+var PARENT_DB={};
 
 // 點名狀態
 var SC={p:['var(--gn-l)','var(--gn-d)','#97C459','出'],k:['var(--am-l)','var(--am-d)','var(--am)','假'],a:['var(--rd-l)','var(--rd-d)','var(--rd)','缺'],o:['var(--g1)','var(--g6)','var(--g4)','他']};
 var SCls={p:'sp',k:'sk',a:'sa',o:'so'};
 
-function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});var el=document.getElementById(id);if(el)el.classList.add('active')}
-function doLogout(){show('s-login');curParent=null;var e=document.getElementById('p-err');if(e)e.style.display='none'}
+function show(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});
+  var el=document.getElementById(id);if(el)el.classList.add('active');
+  if(id==='s-admin'){ onAdminLogin(); }
+}
+function doLogout(){show('s-login');curParent=null;CONFIG_LOADED=false;var e=document.getElementById('p-err');if(e)e.style.display='none'}
 
 // 密碼
 function askPwd(role){
   pendingRole=role;
-  var labels={admin:'行政人員',wai:'楊鈞崴 教練',long:'楊鈞隆 教練'};
+  // 預設標籤，登入後再更新
+  var labels={admin:'行政人員',wai:'崴崴教練',long:'隆隆教練'};
+  // 若設定已載入，用真實名稱
+  if(SYS_CONFIG.coaches.length>=2){
+    labels.wai=SYS_CONFIG.coaches[0];
+    labels.long=SYS_CONFIG.coaches[1];
+  }
+  if(SYS_CONFIG.admins.length>0) labels.admin=SYS_CONFIG.admins[0];
   document.getElementById('pwd-who').textContent=labels[role]||role;
   document.getElementById('pwd-inp').value='';
   document.getElementById('pwd-err').style.display='none';
@@ -847,8 +764,18 @@ function askPwd(role){
 function closePwd(){document.getElementById('pwd-overlay').classList.remove('open')}
 function submitPwd(){
   var val=document.getElementById('pwd-inp').value;
-  if(val===DEFAULT_PWD){var role=pendingRole;pendingRole=null;closePwd();if(role)show('s-'+role);}
-  else{document.getElementById('pwd-err').style.display='block';document.getElementById('pwd-inp').value='';document.getElementById('pwd-inp').focus();}
+  if(val===DEFAULT_PWD){
+    var role=pendingRole;pendingRole=null;closePwd();
+    if(role){
+      show('s-'+role);
+      // 教練登入時也載入設定
+      if(role==='wai'||role==='long'){ loadConfig(null); }
+    }
+  } else {
+    document.getElementById('pwd-err').style.display='block';
+    document.getElementById('pwd-inp').value='';
+    document.getElementById('pwd-inp').focus();
+  }
 }
 function toggleEye(){var inp=document.getElementById('pwd-inp');inp.type=inp.type==='password'?'text':'password';document.getElementById('pwd-eye').style.opacity=inp.type==='text'?'0.4':'1';}
 
@@ -857,17 +784,55 @@ function aTab(btn,id){
   document.querySelectorAll('#s-admin .nb').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');
   ['a-dash','a-match','a-match-edit','a-jersey','a-acc-admin','a-absence','a-hours'].forEach(function(x){var el=document.getElementById(x);if(el)el.style.display='none'});
   var t=document.getElementById(id);if(t)t.style.display='block';
-  if(id==='a-match'){loadMatchList();}
+  if(id==='a-dash'){ loadAdminDash(); }
+  if(id==='a-match'){ loadConfig(function(){ loadMatchList(); }); }
+  if(id==='a-jersey'){ loadConfig(null); loadJerseyOverview(); }
   if(id==='a-acc-admin'){
     var l=document.getElementById('acc-admin-list');if(l)l.style.display='block';
     var d=document.getElementById('acc-admin-detail');if(d)d.style.display='none';
+    loadOrderList();
   }
+  if(id==='a-absence'){ loadConfig(null); loadAbsenceStudentList(); }
 }
 function cTab(who,btn,id){
   document.querySelectorAll('#s-'+who+' .nb').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');
-  var ids=who==='wai'?['wai-today','wai-match','wai-hist']:['long-today'];
+  var ids=who==='wai'?['wai-today','wai-match','wai-hist']:['long-today','long-match','long-hist'];
   ids.forEach(function(x){var el=document.getElementById(x);if(el)el.style.display='none'});
   var t=document.getElementById(id);if(t)t.style.display='block';
+}
+
+function longSubmit(){
+  if(!currentCoachCls){ alert('請先選擇班級'); return; }
+  var longState = {};
+  document.querySelectorAll('#long-list .row').forEach(function(row){
+    var name = row.id ? row.id.replace('lwr-','') : '';
+    if(name && waiState[name]) longState[name] = waiState[name];
+  });
+  if(APPS_SCRIPT_URL){
+    var records=[];
+    Object.keys(waiState).forEach(function(name){
+      var stMap={p:'出席',k:'請假',a:'缺席',o:'其他'};
+      var ni=document.getElementById('lwn-'+name);
+      records.push({name:name,status:stMap[waiState[name]]||waiState[name],note:ni?ni.value:''});
+    });
+    if(records.length===0){ alert('尚未填寫任何點名'); return; }
+    callAPI({
+      action:'submitAttendance',
+      lessonDate:new Date().toISOString().slice(0,10),
+      cls:currentCoachCls,
+      coach:getCoachName('long'),
+      records:records
+    },function(result){
+      var sa=document.getElementById('long-submit-area');if(sa)sa.style.display='none';
+      var done=document.getElementById('long-done');if(done)done.style.display='block';
+      var pre=records.filter(function(r){return r.status==='出席'}).length;
+      var txt=document.getElementById('long-done-txt');
+      if(txt)txt.textContent='出席 '+pre+' 人 · 資料已寫入試算表';
+    });
+  } else {
+    var sa=document.getElementById('long-submit-area');if(sa)sa.style.display='none';
+    var done=document.getElementById('long-done');if(done)done.style.display='block';
+  }
 }
 function pTab(btn,id){
   document.querySelectorAll('#s-parent .nb').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');
@@ -896,7 +861,113 @@ function updateWai(){
   el=document.getElementById('w-oth');if(el)el.textContent=oth;
   el=document.getElementById('wai-sum');if(el)el.innerHTML='已填 <strong>'+vals.length+'/5</strong> 人・出席 '+pre+'　請假/缺席 '+abs+'　其他 '+oth;
 }
+function getCoachName(who) {
+  if(SYS_CONFIG.coaches.length>=2){
+    return who==='wai' ? SYS_CONFIG.coaches[0] : SYS_CONFIG.coaches[1];
+  }
+  return who==='wai' ? '崴崴教練' : '隆隆教練';
+}
+
+function loadCoachClass(who) {
+  var sel = document.getElementById(who+'-cls-select');
+  if(!sel || !sel.value) return;
+  currentCoachCls = sel.value;
+  currentCoachName = who;
+  waiState = {};
+
+  var hero = document.getElementById(who+'-class-hero');
+  var heroName = document.getElementById(who+'-hero-name');
+  var heroMeta = document.getElementById(who+'-hero-meta');
+  if(hero){ hero.style.display='block'; }
+  if(heroName) heroName.textContent = sel.value;
+  if(heroMeta) heroMeta.textContent = '今日點名 · ' + getCoachName(who);
+
+  // 重置統計
+  ['tot','pre','abs','oth'].forEach(function(k){
+    var prefix = who==='wai'?'w':'l';
+    var el=document.getElementById(prefix+'-'+k); if(el)el.textContent='0';
+  });
+
+  // 重置送出區域
+  var sa=document.getElementById(who+'-submit-area'); if(sa)sa.style.display='block';
+  var done=document.getElementById(who+'-done'); if(done)done.style.display='none';
+
+  if(!APPS_SCRIPT_URL){
+    var wl = document.getElementById(who+'-list');
+    if(wl) wl.innerHTML='<p style="font-size:13px;color:var(--g4);padding:8px 0;text-align:center">未連接試算表，無法載入學生</p>';
+    return;
+  }
+
+  // 從試算表讀取該班學生
+  callAPI({action:'getStudentsByClass', cls:sel.value}, function(result){
+    if(result && result.ok && result.students) {
+      renderCoachRoll(who, result.students, []);
+    } else {
+      var wl2 = document.getElementById(who+'-list');
+      if(wl2) wl2.innerHTML='<p style="font-size:13px;color:var(--g4);padding:8px 0;text-align:center">查無此班學生，請確認學生表班別欄位</p>';
+    }
+  });
+
+  // 載入今日請假名單與配件通知
+  callAPI({action:'getLesson', coach: getCoachName(who)}, function(result){
+    if(!result) return;
+    var dn = document.getElementById(who+'-delivery-notices');
+    if(dn && result.deliveryAlerts && result.deliveryAlerts.length > 0){
+      dn.innerHTML = result.deliveryAlerts.map(function(a){
+        return '<div class="delivery-alert"><div class="delivery-alert-title">配件到貨通知</div><div class="delivery-alert-body">'+a.student+' 的「'+a.item+'」已到，請上課時交給家長。<button class="al-btn" style="margin-left:8px;border-color:var(--gn-d);color:var(--gn-d)" onclick="this.closest(\'.delivery-alert\').style.display=\'none\'">確認已交 ✓</button></div></div>';
+      }).join('');
+    } else if(dn){ dn.innerHTML=''; }
+    var al = document.getElementById(who+'-absent-list');
+    var absentForClass = (result.todayAbsent||[]).filter(function(a){ return a.cls === currentCoachCls; });
+    if(al){
+      if(absentForClass.length===0){
+        al.innerHTML='<p style="font-size:13px;color:var(--g4);padding:4px 0">今日無預先請假</p>';
+      } else {
+        al.innerHTML = absentForClass.map(function(a){
+          return '<div class="row"><div class="av" style="background:var(--rd-l);color:var(--rd-d)">'+a.name[0]+'</div><div class="ri"><div class="rn">'+a.name+' <span class="badge b-red">請假</span></div><div class="rm">'+(a.reason||'')+(a.makeup?'・'+a.makeup:'')+'</div></div></div>';
+        }).join('');
+      }
+    }
+  });
+}
+
+function renderCoachRoll(who, students, absentToday) {
+  var absentNames = absentToday.map(function(a){ return a.name; });
+  var regularStudents = students.filter(function(s){ return absentNames.indexOf(s.name) < 0; });
+
+  var wl = document.getElementById(who+'-list');
+  if(!wl) return;
+  if(regularStudents.length === 0){
+    wl.innerHTML='<p style="font-size:13px;color:var(--g4);padding:8px 0;text-align:center">此班無學生資料</p>';
+    return;
+  }
+  wl.innerHTML = regularStudents.map(function(s){
+    var remBadge = s.total > 0 ? (
+      (s.total-s.att) <= 1 ? '<span class="badge b-red">剩'+(s.total-s.att)+'堂</span>' :
+      (s.total-s.att) <= 3 ? '<span class="badge b-am">剩'+(s.total-s.att)+'堂</span>' :
+      '<span class="badge b-ok">剩'+(s.total-s.att)+'堂</span>'
+    ) : '';
+    var id = 'wr-'+s.name.replace(/\s/g,'_');
+    return '<div id="'+id+'" class="row">'
+      +'<div class="av" id="wa-'+s.name+'">'+s.name[0]+'</div>'
+      +'<div class="ri"><div class="rn">'+s.name+' '+remBadge+'</div>'
+      +'<div class="sbtns">'
+      +'<button class="sb" onclick="wSet(\''+s.name+'\',\'p\')">出席</button>'
+      +'<button class="sb" onclick="wSet(\''+s.name+'\',\'k\')">請假</button>'
+      +'<button class="sb" onclick="wSet(\''+s.name+'\',\'a\')">缺席</button>'
+      +'<button class="sb" onclick="wSet(\''+s.name+'\',\'o\')">其他</button>'
+      +'</div>'
+      +'<input class="note-inp" id="wn-'+s.name+'" placeholder="備註"></div>'
+      +'</div>';
+  }).join('');
+
+  var tot = document.getElementById('w-tot');
+  if(tot) tot.textContent = students.length;
+  updateWai();
+}
+
 function waiSubmit(){
+  if(!currentCoachCls){ alert('請先選擇班級'); return; }
   if(APPS_SCRIPT_URL){
     var records=[];
     Object.keys(waiState).forEach(function(name){
@@ -904,18 +975,26 @@ function waiSubmit(){
       var ni=document.getElementById('wn-'+name);
       records.push({name:name,status:stMap[waiState[name]]||waiState[name],note:ni?ni.value:''});
     });
+    if(records.length===0){ alert('尚未填寫任何點名'); return; }
     callAPI({
       action:'submitAttendance',
       lessonDate:new Date().toISOString().slice(0,10),
-      cls:'北大週六國小 15:30-17:00',
-      coach:'楊鈞崴（崴崴）',
+      cls:currentCoachCls,
+      coach:getCoachName(currentCoachName),
       records:records
-    },function(){});
+    },function(result){
+      var sa=document.getElementById('wai-submit-area');if(sa)sa.style.display='none';
+      var done=document.getElementById('wai-done');if(done)done.style.display='block';
+      var pre=records.filter(function(r){return r.status==='出席'}).length;
+      var txt=document.getElementById('wai-done-txt');
+      if(txt)txt.textContent='出席 '+pre+' 人 · 資料已寫入試算表';
+    });
+  } else {
+    var sa=document.getElementById('wai-submit-area');if(sa)sa.style.display='none';
+    var done=document.getElementById('wai-done');if(done)done.style.display='block';
+    var pre=Object.values(waiState).filter(function(v){return v==='p'}).length;
+    var txt=document.getElementById('wai-done-txt');if(txt)txt.textContent='出席 '+pre+' 人（未串接試算表）';
   }
-  var sa=document.getElementById('wai-submit-area');if(sa)sa.style.display='none';
-  var done=document.getElementById('wai-done');if(done)done.style.display='block';
-  var pre=Object.values(waiState).filter(function(v){return v==='p'}).length+2;
-  var txt=document.getElementById('wai-done-txt');if(txt)txt.textContent='出席 '+pre+' 人 · 資料已同步行政後台';
 }
 
 // 比賽資料（從試算表讀取，初始為空）
@@ -983,12 +1062,8 @@ function deleteMatch(){
   alert('比賽已刪除');
 }
 
-// 訂單資料（demo）
-var ORDERS=[
-  {buyer:'張大明',student:'張鈞傑',phone:'0912-345-678',date:'4/15',items:[{name:'黑色球衣球褲',price:1000,qty:1}],note:'球衣尺寸 M',payStatus:'unpaid',shipStatus:'shipped',fiveDigit:''},
-  {buyer:'甯媽媽',student:'甯柏安',phone:'0987-654-321',date:'4/12',items:[{name:'黑色長襪',price:200,qty:2}],note:'',payStatus:'paid',shipStatus:'shipped',fiveDigit:'12345'},
-  {buyer:'林爸爸',student:'林承慷',phone:'0933-111-222',date:'4/10',items:[{name:'SCS 4號高彈跳足球',price:1100,qty:1}],note:'',payStatus:'paid',shipStatus:'received',fiveDigit:'67890'}
-];
+// 訂單資料（從試算表讀取）
+var ORDERS=[];
 var editingOrderIdx=null;
 var STATUS_LABELS={unpaid:'未付款',paid:'已付款',pending:'待出貨',shipped:'已出貨',received:'已取貨'};
 var STATUS_BADGE={unpaid:'b-am',paid:'b-ok',pending:'b-gray',shipped:'b-ok',received:'b-gray'};
@@ -1071,6 +1146,83 @@ function doAccPayNotify(){
 }
 
 
+
+// 球衣號碼總覽（從試算表讀取）
+function loadJerseyOverview() {
+  if (!APPS_SCRIPT_URL) return;
+  callAPI({ action: 'getJerseyDB' }, function(result) {
+    if (!result || !result.ok) return;
+    JERSEY_DB = result.db || {};
+    var ov = document.getElementById('j-overview');
+    if (!ov) return;
+    var nums = Object.keys(JERSEY_DB);
+    if (nums.length === 0) {
+      ov.innerHTML = '<p style="font-size:13px;color:var(--g4);padding:8px 0;grid-column:1/-1;text-align:center">尚無球衣號碼資料</p>';
+      return;
+    }
+    ov.innerHTML = nums.sort(function(a,b){return Number(a)-Number(b)}).map(function(n) {
+      var d = JERSEY_DB[n];
+      return '<div style="background:var(--g0);border-radius:var(--rsm);padding:6px 10px;font-size:12px">'
+        +'<span style="font-weight:700;color:var(--nv)">No.'+n+'</span> '+d.name+' <span style="color:var(--g4)">'+d.grade+'</span></div>';
+    }).join('');
+  });
+  // 同時載入學生選單
+  callAPI({ action: 'getAllStudents' }, function(result) {
+    if (!result || !result.ok) return;
+    var sel = document.getElementById('j-student');
+    if (!sel) return;
+    while (sel.options.length > 1) sel.remove(1);
+    (result.students || []).forEach(function(s) {
+      var jersey = JERSEY_DB ? Object.keys(JERSEY_DB).find(function(k){ return JERSEY_DB[k].name===s.name; }) : null;
+      var opt = document.createElement('option');
+      opt.value = s.name+'|'+(s.grade||'')+'|'+(jersey||'null');
+      opt.textContent = s.name + (s.grade ? '（'+s.grade+'）' : '');
+      sel.appendChild(opt);
+    });
+  });
+}
+
+// 請假登記 - 動態載入學生名單
+function loadAbsenceStudentList() {
+  if (!APPS_SCRIPT_URL) return;
+  callAPI({ action: 'getAllStudents' }, function(result) {
+    if (!result || !result.ok) return;
+    var sel = document.getElementById('ab-student');
+    if (!sel) return;
+    sel.innerHTML = '';
+    (result.students || []).forEach(function(s) {
+      var opt = document.createElement('option');
+      opt.value = s.name; opt.textContent = s.name + (s.cls ? ' (' + s.cls + ')' : '');
+      sel.appendChild(opt);
+    });
+  });
+}
+
+// 行政登記請假（真正呼叫 API）
+function markPaidDash(btn) {
+  btn.closest('.al-row').style.opacity = '.4';
+  btn.closest('.al-row').style.pointerEvents = 'none';
+}
+
+function adminSubmitAbsence() {
+  var cls = document.getElementById('ab-cls-select') ? document.getElementById('ab-cls-select').value : '';
+  var stu = document.getElementById('ab-student') ? document.getElementById('ab-student').value : '';
+  var date = document.getElementById('ab-date') ? document.getElementById('ab-date').value : '';
+  if (!stu || !date) { alert('請填寫學生與日期'); return; }
+  var reason = document.querySelector('#a-absence input[placeholder]') ? document.querySelector('#a-absence input[placeholder]').value : '';
+  var makeup = document.querySelector('#a-absence select:last-of-type') ? document.querySelector('#a-absence select:last-of-type').value : '尚未安排';
+  if (APPS_SCRIPT_URL) {
+    callAPI({
+      action: 'submitAbsence', studentName: stu, cls: cls,
+      absenceDate: date, reason: reason||'行政登記',
+      makeupWish: makeup, source: '行政'
+    }, function(result) {
+      alert(result && result.ok ? '已登記，教練端自動更新' : '登記失敗：'+(result?result.msg:''));
+    });
+  } else {
+    alert('已登記，教練端自動更新');
+  }
+}
 
 function toggleChip(el){el.classList.toggle('sel')}
 
@@ -1255,6 +1407,157 @@ function submitOrder(){
 }
 
 // 家長登入
+// ── 系統設定（全域，從試算表讀取）──────────────────────────────
+var SYS_CONFIG = { classes: [], coaches: [], admins: [] };
+var CONFIG_LOADED = false;
+
+function loadConfig(callback) {
+  if (CONFIG_LOADED) { if(callback) callback(SYS_CONFIG); return; }
+  if (!APPS_SCRIPT_URL) { if(callback) callback(SYS_CONFIG); return; }
+  callAPI({ action: 'getConfig' }, function(result) {
+    if (result && result.ok) {
+      SYS_CONFIG = result.config;
+      CONFIG_LOADED = true;
+      fillAllSelects();
+    }
+    if (callback) callback(SYS_CONFIG);
+  });
+}
+
+function fillAllSelects() {
+  // 填入所有班級下拉選單
+  var classSelects = ['wai-cls-select', 'long-cls-select', 'ab-cls-select', 'tr-cls-select', 'm-cls'];
+  classSelects.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var cur = el.value;
+    // 保留第一個 option
+    while (el.options.length > 1) el.remove(1);
+    SYS_CONFIG.classes.forEach(function(cls) {
+      var opt = document.createElement('option');
+      opt.value = cls; opt.textContent = cls;
+      el.appendChild(opt);
+    });
+    if (cur) el.value = cur;
+  });
+  // 填入所有教練下拉選單
+  var coachSelects = ['m-coach', 'me-coach', 'l-main-coach', 'l-sub-coach'];
+  coachSelects.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var cur = el.value;
+    while (el.options.length > 1) el.remove(1);
+    SYS_CONFIG.coaches.forEach(function(c) {
+      var opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      el.appendChild(opt);
+    });
+    if (cur) el.value = cur;
+  });
+  // 行政名稱
+  if (SYS_CONFIG.admins.length > 0) {
+    var adminTop = document.getElementById('admin-name-top');
+    if (adminTop) adminTop.textContent = SYS_CONFIG.admins[0];
+    var adminDesc = document.getElementById('admin-login-desc');
+    if (adminDesc) adminDesc.textContent = SYS_CONFIG.admins[0] + ' · 管理全部班級與比賽';
+    var loginAdminName = document.getElementById('login-admin-name');
+    if (loginAdminName) loginAdminName.textContent = SYS_CONFIG.admins[0];
+  }
+  // 登入頁教練按鈕名稱（動態顯示，不寫死）
+  if (SYS_CONFIG.coaches.length >= 1) {
+    var waiName = SYS_CONFIG.coaches[0];
+    var waiEl = document.getElementById('login-wai-name');
+    if (waiEl) waiEl.textContent = waiName;
+    var waiAv = document.getElementById('login-wai-av');
+    if (waiAv) waiAv.textContent = waiName[0];
+    var waiDesc = document.getElementById('login-wai-desc');
+    if (waiDesc) waiDesc.textContent = '教練點名・比賽資訊';
+    // 也更新教練端 topbar
+    var waiTop = document.getElementById('wai-name-top');
+    if (waiTop) waiTop.textContent = waiName;
+    var waiAvTop = document.getElementById('wai-av-top');
+    if (waiAvTop) waiAvTop.textContent = waiName[0];
+  }
+  if (SYS_CONFIG.coaches.length >= 2) {
+    var longName = SYS_CONFIG.coaches[1];
+    var longEl = document.getElementById('login-long-name');
+    if (longEl) longEl.textContent = longName;
+    var longAv = document.getElementById('login-long-av');
+    if (longAv) longAv.textContent = longName[0];
+    var longDesc = document.getElementById('login-long-desc');
+    if (longDesc) longDesc.textContent = '教練點名・比賽資訊';
+    var longTop = document.getElementById('long-name-top');
+    if (longTop) longTop.textContent = longName;
+  }
+}
+
+// 行政登入後載入設定與總覽
+function onAdminLogin() {
+  loadConfig(function() {
+    loadAdminDash();
+  });
+}
+
+// 載入行政總覽
+function loadAdminDash() {
+  if (!APPS_SCRIPT_URL) return;
+  callAPI({ action: 'getAlerts' }, function(result) {
+    if (!result || !result.ok) return;
+    var el;
+    el = document.getElementById('dash-total'); if(el) el.textContent = result.total || 0;
+    el = document.getElementById('dash-unpaid'); if(el) el.textContent = (result.unpaid||[]).length;
+    el = document.getElementById('dash-renew'); if(el) el.textContent = (result.needRenew||[]).length;
+    el = document.getElementById('dash-shipped'); if(el) el.textContent = (result.shippedOrders||[]).length;
+    // 待處理列表
+    var alerts = document.getElementById('dash-alerts');
+    if (alerts) {
+      var html = '';
+      (result.unpaid||[]).forEach(function(u) {
+        html += '<div class="al-row al-red"><span>'+u.name+'・'+u.cls+'・$'+Number(u.fee).toLocaleString()+'</span><button class="al-btn" onclick="markPaidDash(this)">已繳 ✓</button></div>';
+      });
+      (result.needRenew||[]).forEach(function(r) {
+        html += '<div class="al-row al-am"><span>'+r.name+'・'+r.cls+'・剩'+r.remaining+'堂</span><button class="al-btn">發提醒</button></div>';
+      });
+      (result.shippedOrders||[]).forEach(function(o) {
+        html += '<div class="al-row al-gn"><span>配件：'+o.student+' '+o.item+' → 已出貨</span><button class="al-btn">更新</button></div>';
+      });
+      (result.makeupPending||[]).forEach(function(m) {
+        html += '<div class="al-row al-pu"><span>'+m.name+'・'+m.date+'請假・補課待確認</span><button class="al-btn">安排</button></div>';
+      });
+      alerts.innerHTML = html || '<p style="font-size:13px;color:var(--g4);padding:8px 0;text-align:center">目前無待處理事項</p>';
+    }
+    // 載入訂單列表
+    loadOrderList();
+  });
+}
+
+// 載入配件訂單列表
+function loadOrderList() {
+  if (!APPS_SCRIPT_URL) return;
+  callAPI({ action: 'getOrders' }, function(result) {
+    if (!result || !result.ok) return;
+    ORDERS = result.orders || [];
+    var el = document.getElementById('order-list-rows');
+    if (!el) return;
+    if (ORDERS.length === 0) {
+      el.innerHTML = '<p style="font-size:13px;color:var(--g4);text-align:center;padding:10px 0">尚無訂單</p>';
+      return;
+    }
+    var statusBadge = { unpaid:'b-am', paid:'b-ok', pending:'b-gray', shipped:'b-ok', received:'b-gray' };
+    var statusLabel = { unpaid:'未付款', paid:'已付款', pending:'待出貨', shipped:'已出貨', received:'已取貨' };
+    el.innerHTML = ORDERS.map(function(o, i) {
+      var badge = statusBadge[o.payStatus] || 'b-gray';
+      var label = statusLabel[o.payStatus] || o.payStatus;
+      return '<div class="row" style="cursor:pointer" onclick="openOrder('+i+')">'
+        +'<div class="av">'+o.student[0]+'</div>'
+        +'<div class="ri"><div class="rn">'+o.student+' <span class="badge '+badge+'">'+label+'</span></div>'
+        +'<div class="rm">'+o.items+'・$'+Number(o.total).toLocaleString()+'・'+o.time+'</div></div>'
+        +'<span style="font-size:11px;color:var(--nv);font-weight:600;flex-shrink:0">詳情 ›</span>'
+        +'</div>';
+    }).join('');
+  });
+}
+
 // ── API 呼叫工具 ──────────────────────────────────────────────
 function callAPI(data, callback) {
   if (!APPS_SCRIPT_URL) {
@@ -1428,6 +1731,8 @@ document.addEventListener('DOMContentLoaded',function(){
   var mdate=document.getElementById('m-date');
   if(mdate){var next=new Date();next.setDate(next.getDate()+7);mdate.valueAsDate=next;}
   var pad=document.getElementById('pa-date');if(pad)pad.valueAsDate=today;
+  // 頁面載入時自動讀取系統設定（更新登入頁教練名稱等）
+  if(APPS_SCRIPT_URL){ loadConfig(null); }
 });
 </script>
 </body>
