@@ -536,6 +536,16 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
         <option value="">— 請選擇 —</option>
       </select>
     </div>
+    <div id="c-date-bar" class="hidden" style="background:var(--dark);border-radius:var(--r8);padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:10px;color:rgba(255,255,255,.5);letter-spacing:.05em;margin-bottom:2px">今日上課日期</div>
+        <div style="font-size:16px;font-weight:800;color:white" id="c-lesson-date-display"></div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:rgba(255,255,255,.5);margin-bottom:2px">更改日期</div>
+        <input type="date" id="c-lesson-date-input" style="background:rgba(255,255,255,.1);border:.5px solid rgba(255,255,255,.2);border-radius:var(--r4);padding:4px 8px;color:white;font-size:12px;font-family:var(--font)" onchange="updateLessonDate()">
+      </div>
+    </div>
     <div id="c-class-info" class="hidden">
       <div id="c-trial-notice" class="hidden">
         <div class="sec" style="color:var(--gold)">今日體驗學員</div>
@@ -727,6 +737,10 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 <div class="modal">
   <div class="modal-title">確認繳費通知</div>
   <div id="pay-modal-body"></div>
+  <div class="fg" style="margin-top:12px">
+    <label class="fl">實收金額</label>
+    <input class="fi" id="pay-modal-amount" type="number" min="0" placeholder="請輸入實際收到的金額">
+  </div>
   <div class="modal-btns">
     <button class="btn btn-outline" onclick="closeModal('pay-modal')">取消</button>
     <button class="btn btn-dark" onclick="doConfirmPay()">確認已收款</button>
@@ -740,7 +754,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 // ══════════════════════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════════════════════
-var API_URL = 'https://script.google.com/macros/s/AKfycbwcNVJY55yaiDpxjrzgenVTePSDtXuJvp2Q0sGDouw7r_Yfn594r1CIkXiuIpUxX09nyg/exec'; // 
+var API_URL = 'YOUR_APPS_SCRIPT_URL_HERE'; // ← 填入 Apps Script URL
 
 // ── 全域狀態 ─────────────────────────────────────────────────
 var G = {
@@ -1284,15 +1298,33 @@ function fillCoachClassSelect() {
   });
 }
 
+function updateLessonDate() {
+  var inp = document.getElementById('c-lesson-date-input');
+  var disp = document.getElementById('c-lesson-date-display');
+  if (inp && disp) {
+    G.coach.lessonDate = inp.value;
+    // 格式化顯示
+    var d = new Date(inp.value + 'T00:00:00');
+    var days = ['日','一','二','三','四','五','六'];
+    disp.textContent = inp.value + '（週' + days[d.getDay()] + '）';
+  }
+}
 function loadClassStudents() {
   var sel = document.getElementById('c-class-sel');
   var code = sel ? sel.value : '';
-  if (!code) { hideEl('c-class-info'); return; }
+  if (!code) { hideEl('c-class-info'); hideEl('c-date-bar'); return; }
   G.coach.classCode = code;
   G.coach.rollState = {};
   G.coach.rollNotes = {};
+  // 初始化日期為今天
+  var todayStr = new Date().toISOString().slice(0,10);
+  if (!G.coach.lessonDate) G.coach.lessonDate = todayStr;
+  var dateInp = document.getElementById('c-lesson-date-input');
+  if (dateInp) { dateInp.value = G.coach.lessonDate; }
+  showEl('c-date-bar');
+  updateLessonDate();
   loading(true);
-  api({ action: 'getClassStudents', classCode: code }, function(r) {
+  api({ action: 'getClassStudents', classCode: code, lessonDate: G.coach.lessonDate }, function(r) {
     loading(false);
     if (!r || !r.ok) return;
     showEl('c-class-info');
@@ -1334,21 +1366,34 @@ function loadClassStudents() {
 
     // 點名表
     var absentNames = absT.map(function(a) { return a.name; });
-    var students = (r.students || []).filter(function(s) { return absentNames.indexOf(s.name) < 0; });
+    // 已請假學生不從點名列表移除，改為在列表中標示
+    var students = r.students || [];
     setText('c-tot', students.length);
     setText('c-present', 0); setText('c-leave', 0); setText('c-absent', 0);
     var rollEl = document.getElementById('c-roll-list');
     if (!students.length) { rollEl.innerHTML = '<div class="empty-state">此班無學生資料</div>'; return; }
         rollEl.innerHTML = '';
     students.forEach(function(s) {
+      // 已請假的學生預設為「請假」狀態
+      var isAbsent = absentNames.indexOf(s.name) >= 0;
+      if (isAbsent && !G.coach.rollState[s.name]) {
+        G.coach.rollState[s.name] = 'leave';
+      }
       var row = document.createElement('div');
       row.className = 'roll-row'; row.id = 'rr-' + s.name;
       var av = document.createElement('div');
-      av.className = 'roll-av'; av.id = 'ra-' + s.name; av.textContent = s.name[0];
+      av.className = 'roll-av' + (isAbsent ? ' leave' : ''); av.id = 'ra-' + s.name;
+      av.textContent = isAbsent ? '假' : s.name[0];
       var body = document.createElement('div');
       body.style.flex = '1';
       var nameDiv = document.createElement('div');
       nameDiv.className = 'roll-name'; nameDiv.textContent = s.name;
+      if (isAbsent) {
+        var absSpan = document.createElement('span');
+        absSpan.className = 'badge b-gold'; absSpan.textContent = '已請假';
+        absSpan.style.marginLeft = '6px';
+        nameDiv.appendChild(absSpan);
+      }
       if (s.grade) {
         var gradeSpan = document.createElement('span');
         gradeSpan.className = 'badge b-gray'; gradeSpan.textContent = s.grade;
@@ -1420,7 +1465,7 @@ function doSubmitAttendance() {
   });
   if (!records.length) { alert('尚未完成點名'); return; }
   loading(true);
-  api({ action: 'submitAttendance', classCode: code, lessonDate: new Date().toISOString().slice(0,10),
+  api({ action: 'submitAttendance', classCode: code, lessonDate: G.coach.lessonDate || new Date().toISOString().slice(0,10),
         coachAccount: G.session.account, records: records }, function(r) {
     loading(false);
     if (!r || !r.ok) { alert(r ? r.error : '送出失敗'); return; }
@@ -1775,7 +1820,7 @@ function loadPayNotices() {
       if (n.status === '待確認') {
         var btn = document.createElement('button');
         btn.className = 'btn-sm btn-sm-dark'; btn.textContent = '確認已收款';
-        btn.dataset.ridx = n.rowIdx; btn.dataset.student = n.student; btn.dataset.type = n.type;
+        btn.dataset.ridx = n.rowIdx; btn.dataset.student = n.student; btn.dataset.type = n.type; btn.dataset.amount = n.amount;
         btn.onclick = function() { openPayModalEl(this); };
         card.querySelector('div:last-child').appendChild(btn);
       }
@@ -1784,18 +1829,24 @@ function loadPayNotices() {
   });
 }
 
-function openPayModal(rowIdx, student, type) {
+function openPayModal(rowIdx, student, type, amount) {
   G.admin.pendingPayRowIdx = rowIdx;
   G.admin.pendingPayStudent = student;
   G.admin.pendingPayType = type;
   document.getElementById('pay-modal-body').innerHTML =
-    '<div class="notice">確認已收到 <strong>' + student + '</strong> 的<strong>' + type + '</strong>？<br>確認後將自動更新學生繳費狀態。</div>';
+    '<div class="notice">確認已收到 <strong>' + student + '</strong> 的 <strong>' + type + '</strong>？<br>' +
+    '通知金額：<strong>$' + (amount||0).toLocaleString() + '</strong>，請確認實收金額後送出。</div>';
+  var amtInp = document.getElementById('pay-modal-amount');
+  if (amtInp) amtInp.value = amount || '';
   showModal('pay-modal');
 }
 
 function doConfirmPay() {
+  var amtInp = document.getElementById('pay-modal-amount');
+  var actualAmt = amtInp ? (parseInt(amtInp.value)||0) : 0;
+  if (!actualAmt) { alert('請填寫實收金額'); return; }
   loading(true);
-  api({ action: 'confirmPayNotice', rowIdx: G.admin.pendingPayRowIdx, student: G.admin.pendingPayStudent, type: G.admin.pendingPayType }, function(r) {
+  api({ action: 'confirmPayNotice', rowIdx: G.admin.pendingPayRowIdx, student: G.admin.pendingPayStudent, type: G.admin.pendingPayType, actualAmount: actualAmt }, function(r) {
     loading(false);
     closeModal('pay-modal');
     if (r && r.ok) { loadPayNotices(); loadDashboard(); }
@@ -1808,7 +1859,7 @@ function doConfirmPay() {
 
 // ── Element-based helpers（避開引號衝突）─────────────────────
 function openPayModalEl(btn) {
-  openPayModal(parseInt(btn.dataset.ridx), btn.dataset.student, btn.dataset.type);
+  openPayModal(parseInt(btn.dataset.ridx), btn.dataset.student, btn.dataset.type, parseInt(btn.dataset.amount)||0);
 }
 function openAbsModalEl(btn) {
   openAbsModal(parseInt(btn.dataset.ridx), btn.dataset.name, btn.dataset.date, parseFloat(btn.dataset.hours), btn.dataset.cls);
