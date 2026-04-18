@@ -760,6 +760,19 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 </div><!-- #app -->
 
 <script>
+function fmtDateTW(d) {
+  if (!d) return '';
+  var s = String(d).trim().slice(0, 10);
+  if (s.length < 10) return s;
+  return s.slice(0,4) + '年' + s.slice(5,7) + '月' + s.slice(8,10) + '日';
+}
+function fmtMonthTW(m) {
+  if (!m) return '';
+  var s = String(m).trim();
+  if (s.length >= 7) return s.slice(0,4) + '年' + s.slice(5,7) + '月';
+  return s;
+}
+
 // ══════════════════════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════════════════════
@@ -802,9 +815,23 @@ function api(data, cb) {
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(data)
   })
-  .then(function(r) { return r.json(); })
+  .then(function(r) {
+    // 先讀成文字，確認是 JSON 再 parse
+    return r.text().then(function(txt) {
+      console.log('API 原始回應:', txt.slice(0, 300));
+      try {
+        return JSON.parse(txt);
+      } catch(e) {
+        console.error('JSON parse 失敗，原始內容:', txt.slice(0, 500));
+        return { ok: false, error: '回應不是 JSON，可能是 Apps Script 執行錯誤' };
+      }
+    });
+  })
   .then(function(r) { cb(r); })
-  .catch(function(e) { console.error(e); cb({ ok: false, error: '網路錯誤，請稍後重試' }); });
+  .catch(function(e) {
+    console.error('Fetch 錯誤:', e);
+    cb({ ok: false, error: '網路錯誤：' + e.message });
+  });
 }
 
 function loading(on) {
