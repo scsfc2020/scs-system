@@ -751,7 +751,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 // ══════════════════════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════════════════════
-var API_URL = 'YOUR_APPS_SCRIPT_URL_HERE'; // ← 填入 Apps Script URL
+var API_URL = 'https://script.google.com/macros/s/AKfycbwcNVJY55yaiDpxjrzgenVTePSDtXuJvp2Q0sGDouw7r_Yfn594r1CIkXiuIpUxX09nyg/exec'; // ← 填入 Apps Script URL
 
 // ── 全域狀態 ─────────────────────────────────────────────────
 var G = {
@@ -870,8 +870,10 @@ function initApp() {
     G.classes = r.classes || [];
     G.accessories = r.accessories || [];
 
-    // 填入試試班級選單
+    // 填入班級選單（所有用到班級的地方）
     fillClassSelects();
+    // 若教練已登入，補填教練班級選單
+    if (G.session.role === 'coach') fillCoachClassSelect();
     // 填入配件清單
     buildAccList();
     // 設定 LINE ID
@@ -945,7 +947,26 @@ function doStaffLogin() {
         G.session.account = account; G.session.classCodes = r2.classCodes || [];
         setText('c-topbar-name', r2.name);
         show('s-coach');
-        fillCoachClassSelect();
+        // 初始化日期
+        if (!G.coach.lessonDate) G.coach.lessonDate = new Date().toISOString().slice(0,10);
+        var di = document.getElementById('c-lesson-date-input');
+        if (di) di.value = G.coach.lessonDate;
+        refreshDateDisplay();
+        // 若設定已載入就直接填班級，否則載入後再填
+        if (G.classes.length) {
+          fillCoachClassSelect();
+        } else {
+          loading(true);
+          api({ action: 'getConfig' }, function(cfg) {
+            loading(false);
+            if (cfg && cfg.ok) {
+              G.config = cfg.config; G.classes = cfg.classes || []; G.accessories = cfg.accessories || [];
+              fillClassSelects(); buildAccList();
+              if (G.config.line) setText('trial-line-id', G.config.line);
+            }
+            fillCoachClassSelect();
+          });
+        }
       });
     }
   });
