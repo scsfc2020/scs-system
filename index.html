@@ -1588,8 +1588,8 @@ function showLessonSummary(r) {
 function startRoll() {
   var r = G_lessonData;
   if (!r) return;
-  var students = r.students || [];
-  var absT     = r.absToday || [];
+  var students = r.students  || [];
+  var absT     = r.absToday  || [];
   var makeups  = r.makeupToday || [];
   var trials   = r.trialsToday || [];
 
@@ -1601,33 +1601,36 @@ function startRoll() {
   showEl('c-submit-area');
 
   // 體驗
-  var trialList = document.getElementById('c-trial-list');
-  if (trials.length) {
-    showEl('c-trial-notice');
+  var trialNotice = document.getElementById('c-trial-notice');
+  var trialList   = document.getElementById('c-trial-list');
+  if (trials.length && trialList) {
+    if (trialNotice) trialNotice.classList.remove('hidden');
     trialList.innerHTML = trials.map(function(t) {
       return '<div class="row-item"><div class="row-av" style="background:var(--gold)">體</div>'
         + '<div class="row-body"><div class="row-name">' + t.childName + '</div>'
         + '<div class="row-sub">家長：' + (t.parentName||'') + ' ' + (t.phone||'') + '</div>'
         + '</div></div>';
     }).join('');
-  } else hideEl('c-trial-notice');
+  } else if (trialNotice) trialNotice.classList.add('hidden');
 
   // 補課
-  var mkList = document.getElementById('c-makeup-list');
-  if (makeups.length) {
-    showEl('c-makeup-notice');
+  var mkNotice = document.getElementById('c-makeup-notice');
+  var mkList   = document.getElementById('c-makeup-list');
+  if (makeups.length && mkList) {
+    if (mkNotice) mkNotice.classList.remove('hidden');
     mkList.innerHTML = makeups.map(function(m) {
       return '<div class="row-item"><div class="row-av" style="background:var(--mid)">補</div>'
         + '<div class="row-body"><div class="row-name">' + m.name + '</div>'
         + '<div class="row-sub">原班：' + m.originalClass + '</div>'
         + '</div></div>';
     }).join('');
-  } else hideEl('c-makeup-notice');
+  } else if (mkNotice) mkNotice.classList.add('hidden');
 
-  // 請假列表（側邊顯示）
-  var absList = document.getElementById('c-abs-list');
-  if (absT.length) {
-    showEl('c-abs-notice');
+  // 請假
+  var absNotice = document.getElementById('c-abs-notice');
+  var absList   = document.getElementById('c-abs-list');
+  if (absT.length && absList) {
+    if (absNotice) absNotice.classList.remove('hidden');
     absList.innerHTML = absT.map(function(a) {
       return '<div class="row-item"><div class="row-av" style="background:var(--red)">假</div>'
         + '<div class="row-body"><div class="row-name">' + a.name
@@ -1635,13 +1638,14 @@ function startRoll() {
         + '<div class="row-sub">' + (a.reason || '已請假') + '</div>'
         + '</div></div>';
     }).join('');
-  } else hideEl('c-abs-notice');
+  } else if (absNotice) absNotice.classList.add('hidden');
 
-  // 點名表（不預設任何狀態，由教練自行點選）
+  // 點名表
   var absentNames = absT.map(function(a){ return a.name; });
   setText('c-tot', students.length);
   setText('c-present', 0); setText('c-leave', 0); setText('c-absent', 0);
   var rollEl = document.getElementById('c-roll-list');
+  if (!rollEl) { console.error('找不到 c-roll-list'); return; }
   if (!students.length) { rollEl.innerHTML = '<div class="empty-state">此班無學生資料</div>'; return; }
   rollEl.innerHTML = '';
   students.forEach(function(s) {
@@ -1654,7 +1658,6 @@ function startRoll() {
     body.style.flex = '1';
     var nameDiv = document.createElement('div');
     nameDiv.className = 'roll-name'; nameDiv.textContent = s.name;
-    // 組別標籤
     if (s.groupType) {
       var groupSpan = document.createElement('span');
       groupSpan.className = s.groupType === '競技' ? 'badge b-dark' : 'badge b-outline';
