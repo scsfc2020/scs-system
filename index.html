@@ -703,6 +703,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
       <div class="stat"><div class="stat-n" id="a-pending-abs" style="color:var(--gold)">-</div><div class="stat-l">待確認假</div></div>
       <div class="stat"><div class="stat-n" id="a-pending-trial" style="color:var(--green)">-</div><div class="stat-l">待確認體驗</div></div>
     </div>
+    <button class="btn btn-outline" style="margin-bottom:12px;width:100%" onclick="openRenewModal()">🔄 開新期（更新學費）</button>
     <div class="sec">今日課程</div>
     <div class="card" id="a-today-classes"><div class="empty-state">載入中...</div></div>
     <div class="sec">近期比賽</div>
@@ -1004,6 +1005,31 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 </div>
 </div>
 
+
+<!-- 開新期 Modal -->
+<div class="overlay" id="renew-modal">
+<div class="modal">
+  <div class="modal-title">開新期</div>
+  <div class="notice" style="margin-bottom:12px">系統將把選定班級的學生繳費狀態改為「未繳」，並更新費用和堂數。</div>
+  <div class="fg"><label class="fl">選擇班級</label>
+    <select class="fi" id="renew-class">
+      <option value="all">全部班級</option>
+    </select>
+  </div>
+  <div class="fg"><label class="fl">新期費用（元）</label>
+    <input class="fi" id="renew-fee" type="number" min="0" placeholder="例：3500（留空則不更改）">
+  </div>
+  <div class="fg"><label class="fl">新期總堂數</label>
+    <input class="fi" id="renew-lessons" type="number" min="0" placeholder="例：10（留空則不更改）">
+  </div>
+  <div id="renew-preview" style="margin-top:8px"></div>
+  <div class="modal-btns">
+    <button class="btn btn-outline" onclick="closeModal('renew-modal')">取消</button>
+    <button class="btn btn-dark" onclick="doRenewPeriod()">確認開新期</button>
+  </div>
+</div>
+</div>
+
 <!-- 出勤摘要 Modal -->
 <div class="overlay" id="lesson-summary-modal">
 <div class="modal" style="max-height:80vh;overflow-y:auto">
@@ -1018,6 +1044,38 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 
 
 <script>
+// ── 行政：開新期 ─────────────────────────────────────────────
+function openRenewModal() {
+  // 填入班級選單
+  var sel = document.getElementById('renew-class');
+  if (sel) {
+    while (sel.options.length > 1) sel.remove(1);
+    (G.classes || []).forEach(function(c) {
+      var o = document.createElement('option');
+      o.value = c.code; o.textContent = c.name;
+      sel.appendChild(o);
+    });
+  }
+  setVal('renew-fee', '');
+  setVal('renew-lessons', '');
+  setText('renew-preview', '');
+  showModal('renew-modal');
+}
+
+function doRenewPeriod() {
+  var classCode = document.getElementById('renew-class').value;
+  var fee     = document.getElementById('renew-fee').value;
+  var lessons = document.getElementById('renew-lessons').value;
+  var className = classCode === 'all' ? '全部班級' : (G.classes.find(function(c){ return c.code === classCode; }) || {}).name || classCode;
+  if (!confirm('確定對「' + className + '」開新期？\n所有學生繳費狀態將改為「未繳」' + (fee ? '，費用更新為 $' + fee : '') + (lessons ? '，堂數更新為 ' + lessons + ' 堂' : ''))) return;
+  loading(true);
+  api({ action: 'renewPeriod', classCode: classCode, fee: fee || null, lessons: lessons || null }, function(r) {
+    loading(false);
+    closeModal('renew-modal');
+    if (r && r.ok) alert('開新期完成！共更新 ' + r.updated + ' 位學生');
+  });
+}
+
 function doCompleteMatch(rowIdx, seq, opp, date) {
   if (!confirm('確定標記「' + seq + ' vs ' + opp + '（' + fmtDateTW(date) + '）」為完賽？\n\n系統將自動：\n① 計入出賽學生出席時數\n② 處理請假補課\n③ 教練工時計入')) return;
   loading(true);
@@ -2177,8 +2235,15 @@ function renderParent(s) {
       absEl.innerHTML = '<div class="empty-state">尚無請假記錄</div>';
     } else {
       absEl.innerHTML = s.absLog.map(function(a) {
-        var bc = a.status === '已確認' ? 'b-green' : 'b-gold';
-        return '<div class="row-item"><div class="row-body"><div class="row-name">' + fmtDateTW(a.date) + '</div><div class="row-sub">' + (a.reason || '') + ' · ' + (a.handling || '待確認') + (a.credit ? ' · 折抵 $' + a.credit : '') + '</div></div><span class="badge ' + bc + '">' + a.status + '</span></div>';
+        var bc = a.status === '已確認' ? 'b-green' : (a.status === '已補課' || a.status === '已補課（比賽）' ? 'b-dark' : 'b-gold');
+        var creditTxt = '';
+        if (a.credit > 0) creditTxt = ' · <span style="color:var(--green)">折抵 $' + a.credit + '</span>';
+        else if (a.handling && a.handling.indexOf('折抵') >= 0) creditTxt = ' · <span style="color:var(--gold)">待確認折抵</span>';
+        var reservedTxt = a.reserved > 0 ? ' · 保留 ' + a.reserved + 'h' : '';
+        return '<div class="row-item"><div class="row-body">'
+          + '<div class="row-name">' + fmtDateTW(a.date) + '</div>'
+          + '<div class="row-sub">' + (a.reason || '') + ' · ' + (a.handling || '待確認') + creditTxt + reservedTxt + '</div>'
+          + '</div><span class="badge ' + bc + '">' + a.status + '</span></div>';
       }).join('');
     }
   }
@@ -2226,10 +2291,12 @@ function renderParentFee(s) {
   if (!el) return;
   var paid = s.paidStatus === '已繳';
 
-  // 計算折抵總額
-  var totalCredit = 0;
-  var creditLogs = (s.absLog || []).filter(function(a){ return a.handling === '折抵下期' && a.credit > 0; });
-  creditLogs.forEach(function(a){ totalCredit += a.credit; });
+  // 一般組：折抵明細（含待確認的）
+  var creditLogs = (s.absLog || []).filter(function(a){
+    return (a.handling === '折抵下期' || a.handling.indexOf('折抵') >= 0) && !a.makeupCls;
+  });
+  var totalCredit = creditLogs.reduce(function(sum, a){ return sum + (a.credit || 0); }, 0);
+  var pendingCredit = creditLogs.filter(function(a){ return a.credit === 0; }).length; // 待確認筆數
 
   if (paid) {
     el.innerHTML = '<div style="background:var(--green);border-radius:var(--r12);padding:20px;color:var(--white);text-align:center;margin-bottom:12px">'
@@ -2247,16 +2314,25 @@ function renderParentFee(s) {
     var creditSection = '';
     if (creditLogs.length > 0) {
       creditSection = '<div class="card" style="margin-bottom:12px">'
-        + '<div class="card-title">折抵紀錄</div>'
+        + '<div class="card-title">請假折抵明細</div>'
         + creditLogs.map(function(a) {
-            return '<div class="row-item"><div class="row-body">'
-              + '<div class="row-name">' + fmtDateTW(a.date) + ' 請假折抵</div>'
-              + '<div class="row-sub">' + (a.reason || '') + '</div>'
-              + '</div><span style="color:var(--green);font-weight:700">-$' + a.credit.toLocaleString() + '</span></div>';
+            var isPending = !a.credit;
+            var amtHtml = isPending
+              ? '<span style="color:var(--gold);font-size:11px">待確認</span>'
+              : '<span style="color:var(--green);font-weight:700">-$' + a.credit.toLocaleString() + '</span>';
+            var statusBadge = a.status === '已確認'
+              ? '<span class="badge b-green" style="margin-left:4px;font-size:9px">已確認</span>'
+              : '<span class="badge b-gold" style="margin-left:4px;font-size:9px">待確認</span>';
+            return '<div class="row-item">'
+              + '<div class="row-body">'
+              + '<div class="row-name">' + fmtDateTW(a.date) + ' 請假' + statusBadge + '</div>'
+              + '<div class="row-sub">' + (a.reason || '') + '　' + a.hours + '堂</div>'
+              + '</div>' + amtHtml + '</div>';
           }).join('')
         + '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--pale);margin-top:6px">'
-        + '<span style="font-size:12px;color:var(--gray)">折抵總額</span>'
+        + '<span style="font-size:12px;color:var(--gray)">已確認折抵總額</span>'
         + '<span style="font-size:14px;font-weight:700;color:var(--green)">-$' + totalCredit.toLocaleString() + '</span></div>'
+        + (pendingCredit > 0 ? '<div style="font-size:11px;color:var(--gold);margin-bottom:6px">尚有 ' + pendingCredit + ' 筆待行政確認折抵金額</div>' : '')
         + '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">'
         + '<span style="font-size:13px;font-weight:600">下期應繳</span>'
         + '<span style="font-size:18px;font-weight:800;color:var(--dark)">$' + nextFee.toLocaleString() + '</span></div>'
