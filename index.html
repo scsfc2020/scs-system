@@ -413,9 +413,9 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
       </div>
     </div>
     <div class="stats">
-      <div class="stat"><div class="stat-n" id="p-att">0</div><div class="stat-l">已出席</div></div>
-      <div class="stat"><div class="stat-n" id="p-rem">0</div><div class="stat-l">剩餘堂</div></div>
-      <div class="stat"><div class="stat-n" id="p-abs-cnt">0</div><div class="stat-l">請假次</div></div>
+      <div class="stat"><div class="stat-n" id="p-att">0</div><div class="stat-l">已使用</div></div>
+      <div class="stat"><div class="stat-n" id="p-rem">0</div><div class="stat-l">剩餘時</div></div>
+      <div class="stat"><div class="stat-n" id="p-abs-cnt">0</div><div class="stat-l">請假時</div></div>
       <div class="stat"><div class="stat-n" id="p-reserved">0</div><div class="stat-l">保留時</div></div>
     </div>
     <div id="p-reserved-notice" class="notice notice-important hidden">
@@ -1033,46 +1033,59 @@ function loadStudentInfo() {
 }
 
 function renderParent(s) {
+  // 頂部資訊
   setText('p-topbar-name', s.name);
-  setText('p-topbar-class', s.className || s.classCode);
+  setText('p-topbar-class', s.className || s.classCodes.join('、'));
 
-  // 期別進度
-  if (s.totalLessons > 0) {
-    showEl('p-period-card');
-    setText('p-period-label', s.classType === '競技' ? '競技組・按月計費' : '本期課程');
-    setText('p-period-title', s.className);
-    var pct = Math.min(100, Math.round(s.attCount / s.totalLessons * 100));
-    setText('p-period-prog-txt', '已上 ' + s.attCount + ' / ' + s.totalLessons + ' 堂');
-    setText('p-period-pct', pct + '%');
-    document.getElementById('p-period-bar').style.width = pct + '%';
-  }
+  // 期別進度卡
+  showEl('p-period-card');
+  setText('p-period-label', s.groupType === '競技' ? '競技組・按月計費' : '本期課程・' + s.totalLessons + '堂');
+  setText('p-period-title', s.className);
+  var usedHours = s.attHours || 0;
+  var totalHours = s.totalHours || s.totalLessons;
+  var pct = totalHours > 0 ? Math.min(100, Math.round(usedHours / totalHours * 100)) : 0;
+  setText('p-period-prog-txt', '已上 ' + usedHours + ' / ' + totalHours + ' 小時');
+  setText('p-period-pct', pct + '%');
+  document.getElementById('p-period-bar').style.width = pct + '%';
 
   // 統計
-  var rem = Math.max(0, s.totalLessons - s.attCount);
-  setText('p-att', s.attCount);
-  setText('p-rem', rem);
-  setText('p-abs-cnt', s.absCount);
-  setText('p-reserved', s.reservedHours || 0);
+  var remHours = Math.max(0, totalHours - usedHours);
+  setText('p-att', usedHours + 'h');
+  setText('p-rem', remHours + 'h');
+  setText('p-abs-cnt', s.absCredit || 0);
+  setText('p-reserved', (s.reservedHours || 0) + 'h');
 
-  // 保留時數提醒
+  // 保留時數提醒（競技組）
   if (s.reservedHours > 0) {
     showEl('p-reserved-notice');
-    setText('p-reserved-hrs', s.reservedHours);
+    setText('p-reserved-hrs', s.reservedHours + ' 小時');
   }
 
   // 進度條
-  var pPct = s.totalLessons > 0 ? Math.min(100, Math.round(s.attCount / s.totalLessons * 100)) : 0;
-  setText('p-prog-txt', '已上 ' + s.attCount + ' / ' + s.totalLessons + ' 堂');
-  setText('p-prog-pct', pPct + '%');
+  setText('p-prog-txt', '已使用 ' + usedHours + ' / ' + totalHours + ' 小時');
+  setText('p-prog-pct', pct + '%');
   var pb = document.getElementById('p-prog-bar');
-  if (pb) pb.style.width = pPct + '%';
+  if (pb) pb.style.width = pct + '%';
 
   // 警示
   var warnEl = document.getElementById('p-warn');
   if (warnEl) {
-    if (rem === 0) { warnEl.classList.remove('hidden'); warnEl.textContent = '課程已上完！請聯繫行政辦理續費。'; }
-    else if (rem <= 2) { warnEl.classList.remove('hidden'); warnEl.textContent = '課程僅剩 ' + rem + ' 堂，請提前續費。'; }
+    if (remHours === 0) { warnEl.classList.remove('hidden'); warnEl.textContent = '課程已用完！請聯繫行政辦理續費。'; }
+    else if (remHours <= (s.totalHours > 10 ? 2 : 1)) { warnEl.classList.remove('hidden'); warnEl.textContent = '課程僅剩 ' + remHours + ' 小時，請提前續費。'; }
     else warnEl.classList.add('hidden');
+  }
+
+  // 折抵提示（一般組）
+  if (!s.isComp && s.creditLimit) {
+    var absCard = document.getElementById('p-warn');
+    var creditNotice = document.getElementById('p-credit-notice');
+    if (!creditNotice) {
+      creditNotice = document.createElement('div');
+      creditNotice.id = 'p-credit-notice';
+      creditNotice.className = 'notice';
+      if (absCard && absCard.parentNode) absCard.parentNode.insertBefore(creditNotice, absCard.nextSibling);
+    }
+    creditNotice.textContent = '請假折抵：每堂 $' + s.perLesson + '，最多折 2 堂（$' + s.creditLimit + '）';
   }
 
   // 出席記錄
@@ -1083,7 +1096,7 @@ function renderParent(s) {
     } else {
       attEl.innerHTML = s.attLog.map(function(a) {
         var bc = a.status === '出席' ? 'b-green' : a.status === '請假' ? 'b-gold' : 'b-gray';
-        return '<div class="row-item"><div class="row-body"><div class="row-name">' + a.date + '</div><div class="row-sub">' + a.cls + (a.note ? ' · ' + a.note : '') + '</div></div><span class="badge ' + bc + '">' + a.status + '</span></div>';
+        return '<div class="row-item"><div class="row-body"><div class="row-name">' + fmtDateTW(a.date) + '</div><div class="row-sub">' + a.cls + (a.hours ? ' · ' + a.hours + 'h' : '') + (a.note ? ' · ' + a.note : '') + '</div></div><span class="badge ' + bc + '">' + a.status + '</span></div>';
       }).join('');
     }
   }
@@ -1096,27 +1109,25 @@ function renderParent(s) {
     } else {
       absEl.innerHTML = s.absLog.map(function(a) {
         var bc = a.status === '已確認' ? 'b-green' : 'b-gold';
-        return '<div class="row-item"><div class="row-body"><div class="row-name">' + a.date + '</div><div class="row-sub">' + (a.reason || '') + ' · ' + (a.handling || '待確認') + '</div></div><span class="badge ' + bc + '">' + a.status + '</span></div>';
+        return '<div class="row-item"><div class="row-body"><div class="row-name">' + fmtDateTW(a.date) + '</div><div class="row-sub">' + (a.reason || '') + ' · ' + (a.handling || '待確認') + (a.credit ? ' · 折抵 $' + a.credit : '') + '</div></div><span class="badge ' + bc + '">' + a.status + '</span></div>';
       }).join('');
     }
   }
 
   // 繳費
   renderParentFee(s);
-
   // 比賽
   renderParentMatches(s.matches || []);
 
-  // 請假頁面：填入時數選項（依班級時數預設）
-  var paHours = document.getElementById('pa-hours');
-  if (paHours && s.classHours) {
-    paHours.value = s.classHours;
+  // 請假頁：填入班級選項（多班）
+  var paAbsClass = document.getElementById('pa-abs-class');
+  if (!paAbsClass) {
+    // 若沒有班級選擇器，用第一個班
   }
 
-  // 補課班別（同類型）
+  // 補課班別
   fillMakeupClassSelect(s);
-
-  // 繳費頁銀行資訊
+  // 銀行資訊
   fillBankInfo('p-fee-bank-info');
   fillBankInfo('acc-bank-info');
 }
@@ -1209,24 +1220,33 @@ function fillMakeupClassSelect(s) {
 function doSubmitAbsence() {
   var s = G.session.student;
   if (!s) return;
-  var date     = document.getElementById('pa-date').value;
-  var reason   = document.getElementById('pa-reason').value;
-  var hours    = parseFloat(document.getElementById('pa-hours').value) || 1;
-  var handling = s.isComp
-    ? (document.getElementById('pa-handling').value || '保留時數')
-    : (s.absCount >= 2 ? '補課' : '折抵下期');
-  if (!date || !reason) { alert('請填寫日期與原因'); return; }
+  var date   = document.getElementById('pa-date').value;
+  var reason = document.getElementById('pa-reason').value;
+  var hours  = parseFloat(document.getElementById('pa-hours').value) || 1;
+
+  // 班級：多班時用第一個
+  var classCode = (s.classCodes && s.classCodes.length > 0) ? s.classCodes[0] : (s.classCode || '');
+  var clsSel = document.getElementById('pa-abs-class');
+  if (clsSel && clsSel.value) classCode = clsSel.value;
+
+  // 處理方式
+  var handling;
+  if (s.isComp) {
+    var hSel = document.getElementById('pa-handling');
+    handling = hSel ? hSel.value : '保留時數';
+  } else {
+    handling = (s.absCredit || 0) >= 2 ? '補課' : '折抵下期';
+  }
+  if (!date || !reason || !classCode) { alert('請填寫日期、原因與班級'); return; }
   loading(true);
-  api({ action: 'submitAbsence', studentName: s.name, classCode: s.classCode,
+  api({ action: 'submitAbsence', studentName: s.name, classCode: classCode,
         absenceDate: date, hours: hours, reason: reason, handling: handling, source: '家長' }, function(r) {
     loading(false);
     if (!r || !r.ok) { alert(r ? r.error : '送出失敗'); return; }
     showMsg('pa-ok');
-    loadStudentInfo(); // 重新載入
+    loadStudentInfo();
   });
 }
-
-// 家長補課預約
 function doBookMakeup() {
   var s = G.session.student;
   if (!s) return;
@@ -1418,26 +1438,30 @@ function showLessonSummary(r) {
   var makeups   = r.makeupToday || [];
   var trials    = r.trialsToday || [];
   var absNames  = absT.map(function(a){ return a.name; });
-  var regularCnt = students.length;
-  var absCnt     = absT.length;
-  var makeupCnt  = makeups.length;
-  var trialCnt   = trials.length;
+  var regularCnt  = students.length;
+  var generalCnt  = students.filter(function(s){ return s.group !== '競技'; }).length;
+  var compCnt     = students.filter(function(s){ return s.group === '競技'; }).length;
+  var absCnt      = absT.length;
+  var makeupCnt   = makeups.length;
+  var trialCnt    = trials.length;
   var totalExpect = regularCnt - absCnt + makeupCnt + trialCnt;
 
-  // 班級名稱
   var sel = document.getElementById('c-class-sel');
   var className = sel ? sel.options[sel.selectedIndex].text : '';
-
   setText('ls-title', fmtDateTW(G.coach.lessonDate) + '  ' + className);
 
   var body = document.getElementById('ls-body');
 
-  // 統計卡
-  var statsHtml = '<div class="stats" style="margin-bottom:14px">'
+  // 統計卡（含組別分類）
+  var statsHtml = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">'
     + '<div class="stat"><div class="stat-n">' + regularCnt + '</div><div class="stat-l">正課人數</div></div>'
-    + '<div class="stat"><div class="stat-n" style="color:var(--red)">' + absCnt + '</div><div class="stat-l">請假人數</div></div>'
-    + '<div class="stat"><div class="stat-n" style="color:var(--mid)">' + makeupCnt + '</div><div class="stat-l">補課人數</div></div>'
-    + '<div class="stat"><div class="stat-n" style="color:var(--gold)">' + trialCnt + '</div><div class="stat-l">體驗人數</div></div>'
+    + '<div class="stat"><div class="stat-n">' + generalCnt + '</div><div class="stat-l">一般組</div></div>'
+    + '<div class="stat"><div class="stat-n">' + compCnt + '</div><div class="stat-l">競技組</div></div>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">'
+    + '<div class="stat"><div class="stat-n" style="color:var(--red)">' + absCnt + '</div><div class="stat-l">請假</div></div>'
+    + '<div class="stat"><div class="stat-n" style="color:var(--mid)">' + makeupCnt + '</div><div class="stat-l">補課</div></div>'
+    + '<div class="stat"><div class="stat-n" style="color:var(--gold)">' + trialCnt + '</div><div class="stat-l">體驗</div></div>'
     + '</div>'
     + '<div style="background:var(--dark);border-radius:var(--r8);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
     + '<span style="font-size:12px;color:rgba(255,255,255,.6)">本日應到人數</span>'
@@ -1559,10 +1583,18 @@ function startRoll() {
     body.style.flex = '1';
     var nameDiv = document.createElement('div');
     nameDiv.className = 'roll-name'; nameDiv.textContent = s.name;
+    // 組別標籤
+    if (s.groupType) {
+      var groupSpan = document.createElement('span');
+      groupSpan.className = s.groupType === '競技' ? 'badge b-dark' : 'badge b-outline';
+      groupSpan.textContent = s.groupType;
+      groupSpan.style.marginLeft = '6px';
+      nameDiv.appendChild(groupSpan);
+    }
     if (isAbsent) {
       var absSpan = document.createElement('span');
       absSpan.className = 'badge b-gold'; absSpan.textContent = '已請假';
-      absSpan.style.marginLeft = '6px';
+      absSpan.style.marginLeft = '4px';
       nameDiv.appendChild(absSpan);
     }
     if (s.grade) {
@@ -1767,17 +1799,24 @@ function loadAbsences() {
 
 function openAbsModal(rowIdx, name, date, hours, classCode) {
   G.admin.pendingAbsRowIdx = rowIdx;
-  // 計算折抵金額
-  var classInfo = G.classes.find(function(c) { return c.code === classCode; });
+
+  // 從學生資料找費用和總堂數
   var credit = 0;
-  if (classInfo && classInfo.type === '一般' && classInfo.fee && classInfo.fee !== '按月') {
-    credit = Math.round(parseInt(classInfo.fee) / 10 * hours);
-  } else if (classInfo && classInfo.type === '競技') {
-    credit = Math.min(1000, Math.round(175 * hours));
+  var hint = '';
+  // 找學生的費用方案
+  if (G.session && G.session.role === 'admin') {
+    // 從已知班級資訊計算
+    var classInfo = G.classes ? G.classes.find(function(c){ return c.code === classCode; }) : null;
+    if (classInfo) {
+      // 一般組：折抵 = 費用÷5（最多2堂）
+      // 由行政手動填入正確金額，這裡提供參考
+      hint = '（請假 ' + hours + ' 堂）';
+    }
   }
+
   document.getElementById('abs-modal-body').innerHTML =
-    '<div class="notice"><strong>' + name + '</strong> 申請 ' + date + ' 請假 ' + hours + ' 小時' +
-    (credit ? '<br>建議折抵金額：<strong>$' + credit + '</strong>（一般組：學費/10×時數；競技組：175×時數，上限1000）' : '') + '</div>';
+    '<div class="notice"><strong>' + name + '</strong> 申請 ' + fmtDateTW(date) + ' 請假 ' + hours + ' 堂' + hint + '<br>'
+    + '<span style="color:var(--gray);font-size:11px">折抵金額 = 本期費用 ÷ 總堂數 × 請假堂數，最多 2 堂（= 本期費用 ÷ 5）</span></div>';
   document.getElementById('abs-modal-credit').value = credit || '';
   showModal('abs-modal');
 }
