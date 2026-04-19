@@ -751,6 +751,19 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 </div>
 </div>
 
+<!-- 出勤摘要 Modal -->
+<div class="overlay" id="lesson-summary-modal">
+<div class="modal" style="max-height:80vh;overflow-y:auto">
+  <div class="modal-title" id="ls-title">本日出勤摘要</div>
+  <div id="ls-body"></div>
+  <div class="modal-btns" style="margin-top:16px">
+    <button class="btn btn-outline" onclick="closeModal('lesson-summary-modal')">取消</button>
+    <button class="btn btn-dark" onclick="closeModal('lesson-summary-modal');startRoll()">開始點名</button>
+  </div>
+</div>
+</div>
+
+
 <script>
 function fmtDateTW(d) {
   if (!d) return '';
