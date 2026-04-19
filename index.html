@@ -1183,6 +1183,12 @@ function renderParentFee(s) {
   var el = document.getElementById('p-fee-content');
   if (!el) return;
   var paid = s.paidStatus === '已繳';
+
+  // 計算折抵總額
+  var totalCredit = 0;
+  var creditLogs = (s.absLog || []).filter(function(a){ return a.handling === '折抵下期' && a.credit > 0; });
+  creditLogs.forEach(function(a){ totalCredit += a.credit; });
+
   if (paid) {
     el.innerHTML = '<div style="background:var(--green);border-radius:var(--r12);padding:20px;color:var(--white);text-align:center;margin-bottom:12px">'
       + '<div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px">本期費用</div>'
@@ -1191,12 +1197,37 @@ function renderParentFee(s) {
       + '</div>'
       + '<div class="card txt-center" style="padding:20px"><div class="txt-gray">本期費用已繳清，感謝！</div></div>';
   } else {
+    // 本期費用
+    var baseFee = s.fee || 0;
+    // 下期應繳 = 本期費用 - 折抵總額
+    var nextFee = Math.max(0, baseFee - totalCredit);
+
+    var creditSection = '';
+    if (creditLogs.length > 0) {
+      creditSection = '<div class="card" style="margin-bottom:12px">'
+        + '<div class="card-title">折抵紀錄</div>'
+        + creditLogs.map(function(a) {
+            return '<div class="row-item"><div class="row-body">'
+              + '<div class="row-name">' + fmtDateTW(a.date) + ' 請假折抵</div>'
+              + '<div class="row-sub">' + (a.reason || '') + '</div>'
+              + '</div><span style="color:var(--green);font-weight:700">-$' + a.credit.toLocaleString() + '</span></div>';
+          }).join('')
+        + '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--pale);margin-top:6px">'
+        + '<span style="font-size:12px;color:var(--gray)">折抵總額</span>'
+        + '<span style="font-size:14px;font-weight:700;color:var(--green)">-$' + totalCredit.toLocaleString() + '</span></div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">'
+        + '<span style="font-size:13px;font-weight:600">下期應繳</span>'
+        + '<span style="font-size:18px;font-weight:800;color:var(--dark)">$' + nextFee.toLocaleString() + '</span></div>'
+        + '</div>';
+    }
+
     el.innerHTML = '<div class="pay-hero">'
-      + '<div class="pay-hero-label">本期應繳金額</div>'
-      + '<div class="pay-hero-amount">$' + (s.fee || 0).toLocaleString() + '</div>'
-      + '<div class="pay-hero-note">' + (s.feeNote || '') + '</div>'
+      + '<div class="pay-hero-label">本期費用</div>'
+      + '<div class="pay-hero-amount">$' + baseFee.toLocaleString() + '</div>'
+      + (s.feeNote ? '<div class="pay-hero-note">' + s.feeNote + '</div>' : '')
       + '<div class="pay-status-badge">待繳費</div>'
       + '</div>'
+      + creditSection
       + '<div class="card"><div class="card-title">匯款資訊</div>'
       + '<div class="txt-small txt-gray" style="margin-bottom:10px;line-height:1.6">匯款完成後請點選「通知已繳費」並輸入帳號末五碼</div>'
       + '<div id="p-fee-bank-info"></div>'
@@ -1207,7 +1238,6 @@ function renderParentFee(s) {
       + '<div class="success" id="p-pay-ok">已通知行政！請耐心等候確認</div>'
       + '<button class="btn btn-dark mt12" id="p-pay-btn" disabled onclick="doPayNotify()">通知行政已繳費</button>'
       + '</div>';
-    // 非同步填銀行資訊
     setTimeout(function() { fillBankInfo('p-fee-bank-info'); }, 50);
   }
 }
