@@ -628,6 +628,11 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
     <div class="sec">待確認繳費通知</div>
     <div id="a-pay-notices-dash"></div>
   </div>
+  <!-- 補課管理 -->
+  <div class="content hidden" id="a-tab-makeup">
+    <div class="notice">確認補課後，教練點名頁面會自動出現該補課學員。</div>
+    <div id="a-makeup-list"><div class="empty-state">載入中...</div></div>
+  </div>
   <!-- 請假管理 -->
   <div class="content hidden" id="a-tab-abs">
     <div class="notice">確認請假後教練端即時更新，可同時設定處理方式及折抵金額。</div>
@@ -656,6 +661,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 <div class="bnav">
   <button class="bnav-btn on" onclick="aTab(this,'a-tab-dash');loadDashboard()"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>總覽</button>
   <button class="bnav-btn" onclick="aTab(this,'a-tab-abs');loadAbsences()"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>請假</button>
+  <button class="bnav-btn" onclick="aTab(this,'a-tab-makeup');loadAdminMakeups()"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>補課</button>
   <button class="bnav-btn" onclick="aTab(this,'a-tab-trial');loadTrials()"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg>體驗</button>
   <button class="bnav-btn" onclick="aTab(this,'a-tab-match');loadAdminMatches()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>比賽</button>
   <button class="bnav-btn" onclick="aTab(this,'a-tab-orders');loadOrders()"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>配件</button>
@@ -746,20 +752,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 </div>
 
 
-<!-- 出勤摘要 Modal -->
-<div class="overlay" id="lesson-summary-modal">
-<div class="modal">
-  <div class="modal-title" id="ls-title">本日出勤摘要</div>
-  <div id="ls-body"></div>
-  <div class="modal-btns" style="margin-top:16px">
-    <button class="btn btn-outline" onclick="closeModal('lesson-summary-modal')">取消</button>
-    <button class="btn btn-dark" onclick="closeModal('lesson-summary-modal');startRoll()">開始點名</button>
-  </div>
-</div>
-</div>
-</div><!-- #app -->
-
-<script>
+<!
 function fmtDateTW(d) {
   if (!d) return '';
   var s = String(d).trim().slice(0, 10);
@@ -773,6 +766,7 @@ function fmtMonthTW(m) {
   return s;
 }
 
+<script>
 // ══════════════════════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════════════════════
@@ -801,7 +795,8 @@ var G = {
     pendingPayRowIdx: null,
     pendingPayStudent: null,
     pendingPayType: null,
-    pendingMatchRowIdx: null
+    pendingMatchRowIdx: null,
+    studentsCache: null
   },
   accQty: {}            // 配件數量
 };
@@ -1844,8 +1839,53 @@ function loadPayNoticesDash() {
   });
 }
 
+
+function loadAdminMakeups() {
+  loading(true);
+  api({ action: 'getMakeups' }, function(r) {
+    loading(false);
+    var el = document.getElementById('a-makeup-list');
+    if (!r || !r.ok || !r.makeups.length) {
+      el.innerHTML = '<div class="empty-state">目前無補課預約</div>'; return;
+    }
+    el.innerHTML = '';
+    var statusColors = { '待確認': 'b-gold', '已確認': 'b-green' };
+    r.makeups.forEach(function(m) {
+      var card = document.createElement('div');
+      card.className = 'card'; card.style.marginBottom = '10px';
+      card.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
+        + '<div><div style="font-size:14px;font-weight:700">' + m.name + '</div>'
+        + '<div class="txt-small txt-gray">補課班級：' + m.makeupCls + ' · ' + fmtDateTW(m.makeupDate) + '</div>'
+        + '<div class="txt-small txt-gray">原班：' + m.classCode + '</div></div>'
+        + '<span class="badge ' + (statusColors[m.status] || 'b-gray') + '">' + m.status + '</span></div>';
+      if (m.status === '待確認') {
+        var btn = document.createElement('button');
+        btn.className = 'btn-sm btn-sm-dark'; btn.textContent = '確認補課';
+        btn.dataset.ridx = m.rowIdx;
+        btn.onclick = function() { doConfirmMakeup(parseInt(this.dataset.ridx)); };
+        card.appendChild(btn);
+      }
+      el.appendChild(card);
+    });
+  });
+}
+
+function doConfirmMakeup(rowIdx) {
+  loading(true);
+  api({ action: 'confirmMakeup', rowIdx: rowIdx }, function(r) {
+    loading(false);
+    if (r && r.ok) loadAdminMakeups();
+  });
+}
+
 function loadAbsences() {
   loading(true);
+  // 先快取學生資料，用於計算折抵金額
+  if (!G.admin.studentsCache) {
+    api({ action: 'getStudents' }, function(sr) {
+      if (sr && sr.ok) G.admin.studentsCache = sr.students;
+    });
+  }
   api({ action: 'getAbsences' }, function(r) {
     loading(false);
     var el = document.getElementById('a-abs-list');
@@ -1877,24 +1917,32 @@ function loadAbsences() {
 function openAbsModal(rowIdx, name, date, hours, classCode) {
   G.admin.pendingAbsRowIdx = rowIdx;
 
-  // 從學生資料找費用和總堂數
+  // 直接從 API 取得學生資料計算折抵金額
   var credit = 0;
-  var hint = '';
-  // 找學生的費用方案
-  if (G.session && G.session.role === 'admin') {
-    // 從已知班級資訊計算
-    var classInfo = G.classes ? G.classes.find(function(c){ return c.code === classCode; }) : null;
-    if (classInfo) {
-      // 一般組：折抵 = 費用÷5（最多2堂）
-      // 由行政手動填入正確金額，這裡提供參考
-      hint = '（請假 ' + hours + ' 堂）';
-    }
-  }
+  var creditHint = '請手動填入折抵金額';
 
+  // 先用快取計算，再顯示 modal
+  api({ action: 'getStudents' }, function(sr) {
+    if (sr && sr.ok) {
+      var stu = sr.students.find(function(s) {
+        return s.name === name;
+      });
+      if (stu && stu.fee && stu.totalLessons) {
+        var perLesson = Math.round(stu.fee / stu.totalLessons);
+        var maxCredit = Math.round(stu.fee / 5);
+        credit = Math.min(perLesson * hours, maxCredit);
+        creditHint = '每堂 $' + perLesson + '，最多折 2 堂 = $' + maxCredit;
+      }
+    }
+    document.getElementById('abs-modal-body').innerHTML =
+      '<div class="notice"><strong>' + name + '</strong> 申請 ' + fmtDateTW(date) + ' 請假 ' + hours + ' 堂<br>'
+      + '<span style="color:var(--gray);font-size:11px">建議折抵：' + creditHint + '</span></div>';
+    document.getElementById('abs-modal-credit').value = credit || '';
+  });
+
+  // 先顯示 modal（載入中）
   document.getElementById('abs-modal-body').innerHTML =
-    '<div class="notice"><strong>' + name + '</strong> 申請 ' + fmtDateTW(date) + ' 請假 ' + hours + ' 堂' + hint + '<br>'
-    + '<span style="color:var(--gray);font-size:11px">折抵金額 = 本期費用 ÷ 總堂數 × 請假堂數，最多 2 堂（= 本期費用 ÷ 5）</span></div>';
-  document.getElementById('abs-modal-credit').value = credit || '';
+    '<div class="notice">載入學生資料中...</div>';
   showModal('abs-modal');
 }
 
@@ -2157,6 +2205,21 @@ function updateOrderEl(btn) {
   updateOrder(parseInt(btn.dataset.ridx), btn.dataset.field, btn.dataset.val);
 }
 document.addEventListener('DOMContentLoaded', function() {
+  // 初始化教練日期
+  G.coach.lessonDate = new Date().toISOString().slice(0,10);
+  var di = document.getElementById('c-lesson-date-input');
+  if (di) di.value = G.coach.lessonDate;
+  refreshDateDisplay();
+  // 預設今日
+  var today = new Date().toISOString().slice(0, 10);
+  ['pa-date', 'pa-makeup-date', 'tr-date'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = today;
+  });
+  // 載入設定
+  initApp();
+});
+r('DOMContentLoaded', function() {
   // 初始化教練日期
   G.coach.lessonDate = new Date().toISOString().slice(0,10);
   var di = document.getElementById('c-lesson-date-input');
