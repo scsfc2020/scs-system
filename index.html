@@ -432,6 +432,53 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
     <div class="sec">最近出席記錄</div>
     <div class="card"><div id="p-att-log"></div></div>
   </div>
+  <!-- 球員資料 -->
+  <div class="content hidden" id="p-tab-profile">
+    <div id="p-profile-view" class="hidden">
+      <!-- 已填寫：顯示資料 -->
+      <div class="card" style="text-align:center;padding:24px 20px;margin-bottom:12px">
+        <div style="width:64px;height:64px;border-radius:50%;background:var(--dark);color:white;font-size:24px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 12px" id="p-profile-avatar">?</div>
+        <div style="font-size:18px;font-weight:800" id="p-profile-name"></div>
+        <div class="txt-gray txt-small" id="p-profile-school"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">球員基本資料</div>
+        <div class="row-item"><div class="row-body"><div class="row-name">性別</div></div><span id="p-pf-gender" class="badge b-dark"></span></div>
+        <div class="row-item"><div class="row-body"><div class="row-name">出生日期</div></div><span id="p-pf-bday" class="txt-gray txt-small"></span></div>
+        <div class="row-item"><div class="row-body"><div class="row-name">身分證字號</div></div><span id="p-pf-id" class="txt-gray txt-small"></span></div>
+        <div class="row-item"><div class="row-body"><div class="row-name">球衣號碼</div></div><span id="p-pf-number" class="txt-gray txt-small"></span></div>
+        <div class="row-item"><div class="row-body"><div class="row-name">緊急聯絡人</div></div><span id="p-pf-emergency" class="txt-gray txt-small"></span></div>
+        <div class="row-item"><div class="row-body"><div class="row-name">緊急聯絡電話</div></div><span id="p-pf-tel" class="txt-gray txt-small"></span></div>
+      </div>
+      <div class="notice" id="p-profile-edit-notice" style="margin-top:12px"></div>
+      <button class="btn btn-outline mt12" id="p-profile-edit-btn" onclick="showProfileForm()">修改資料</button>
+    </div>
+
+    <div id="p-profile-form">
+      <!-- 填寫/修改表單 -->
+      <div class="notice" id="p-profile-count-notice" style="margin-bottom:12px"></div>
+      <div class="card">
+        <div class="card-title">填寫球員資料</div>
+        <div class="fg"><label class="fl">球員姓名</label><input class="fi" id="pf-name" type="text" readonly style="background:var(--pale)"></div>
+        <div class="fg"><label class="fl">身分證字號 *</label><input class="fi" id="pf-id" type="text" placeholder="A123456789" maxlength="10"></div>
+        <div class="fg"><label class="fl">性別 *</label>
+          <select class="fi" id="pf-gender">
+            <option value="">— 請選擇 —</option>
+            <option value="男">男</option>
+            <option value="女">女</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">出生日期 *</label><input class="fi" id="pf-bday" type="date"></div>
+        <div class="fg"><label class="fl">球衣號碼（無則免填）</label><input class="fi" id="pf-number" type="number" min="1" max="99" placeholder="例：7"></div>
+        <div class="fg"><label class="fl">緊急聯絡人 *</label><input class="fi" id="pf-emergency" type="text" placeholder="例：王爸爸"></div>
+        <div class="fg"><label class="fl">緊急聯絡人電話 *</label><input class="fi" id="pf-tel" type="tel" placeholder="0912345678"></div>
+        <div class="fg"><label class="fl">就讀國小 *</label><input class="fi" id="pf-school" type="text" placeholder="例：天母國小"></div>
+      </div>
+      <div class="success" id="pf-ok">資料儲存成功！</div>
+      <button class="btn btn-dark mt12" onclick="doSubmitProfile()">儲存球員資料</button>
+    </div>
+  </div>
+
   <!-- 比賽 -->
   <div class="content hidden" id="p-tab-match">
     <div id="p-match-list"><div class="empty-state">目前無即將到來的比賽</div></div>
@@ -519,7 +566,6 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
       <div id="acc-list"></div>
       <div class="order-total"><span class="order-total-label">訂單總計</span><span class="order-total-amount" id="acc-total">$0</span></div>
       <div id="acc-order-form" class="hidden" style="margin-top:14px">
-        <div class="fg"><label class="fl">訂購人</label><input class="fi" id="acc-buyer" type="text" placeholder="家長姓名"></div>
         <div class="fg"><label class="fl">聯絡電話</label><input class="fi" id="acc-phone" type="tel" placeholder="09xx-xxx-xxx"></div>
         <div class="fg"><label class="fl">備註（尺寸、客製姓名等）</label><textarea class="fi" id="acc-note" rows="3" placeholder="例：球衣尺寸 S、印製名字：王小明" style="resize:none"></textarea></div>
         <div class="success" id="acc-ok">訂單已送出！行政將盡快確認</div>
@@ -542,6 +588,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
   <button class="bnav-btn" onclick="pTab(this,'p-tab-fee')"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>繳費</button>
   <button class="bnav-btn" onclick="pTab(this,'p-tab-abs')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/></svg>請假</button>
   <button class="bnav-btn" onclick="pTab(this,'p-tab-acc')"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>配件</button>
+  <button class="bnav-btn" onclick="pTab(this,'p-tab-profile')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>球員</button>
 </div>
 </div>
 
@@ -935,6 +982,22 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 </div>
 </div>
 
+
+<!-- 球員資料卡 Modal（教練點名用）-->
+<div class="overlay" id="player-card-modal">
+<div class="modal">
+  <div style="text-align:center;margin-bottom:16px">
+    <div style="width:64px;height:64px;border-radius:50%;background:var(--dark);color:white;font-size:28px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 10px" id="pc-avatar"></div>
+    <div style="font-size:20px;font-weight:800" id="pc-name"></div>
+    <div id="pc-group-badge" style="margin-top:4px"></div>
+  </div>
+  <div id="pc-body"></div>
+  <div class="modal-btns" style="margin-top:16px">
+    <button class="btn btn-dark" onclick="closeModal('player-card-modal')">關閉</button>
+  </div>
+</div>
+</div>
+
 <!-- 出勤摘要 Modal -->
 <div class="overlay" id="lesson-summary-modal">
 <div class="modal" style="max-height:80vh;overflow-y:auto">
@@ -949,6 +1012,144 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 
 
 <script>
+// ── 家長：球員資料 ────────────────────────────────────────────
+function renderProfile(s) {
+  var nameEl = document.getElementById('pf-name');
+  if (nameEl) nameEl.value = s.name;
+
+  // 設定生日
+  var bdayEl = document.getElementById('pf-bday');
+  if (bdayEl && s.bday) bdayEl.value = s.bday;
+
+  if (s.hasProfile) {
+    // 已有資料：顯示資料頁
+    var viewEl = document.getElementById('p-profile-view');
+    var formEl = document.getElementById('p-profile-form');
+    if (viewEl) viewEl.classList.remove('hidden');
+    if (formEl) formEl.classList.add('hidden');
+
+    // 頭像
+    var av = document.getElementById('p-profile-avatar');
+    if (av) av.textContent = s.name[0];
+
+    setText('p-profile-name', s.name);
+    setText('p-profile-school', s.school || '');
+    setText('p-pf-gender', s.gender || '—');
+    setText('p-pf-bday', s.bday ? fmtDateTW(s.bday) : '—');
+    // 身分證遮蔽顯示
+    var id = s.idNumber || '';
+    var idShow = id.length >= 7 ? id.slice(0,3) + '****' + id.slice(-3) : (id ? '***' : '未填寫');
+    setText('p-pf-id', idShow);
+    setText('p-pf-number', s.jersey || '（未填）');
+    setText('p-pf-emergency', s.emergency || '—');
+    setText('p-pf-tel', s.emergencyTel || '—');
+
+    // 修改次數提示
+    var remaining = 3 - (s.editCount || 0);
+    var noticeEl = document.getElementById('p-profile-edit-notice');
+    var editBtn  = document.getElementById('p-profile-edit-btn');
+    if (noticeEl) noticeEl.textContent = '剩餘可修改次數：' + remaining + ' 次（共3次）';
+    if (editBtn) editBtn.classList[remaining > 0 ? 'remove' : 'add']('hidden');
+  } else {
+    // 尚未填寫：顯示表單
+    var viewEl2 = document.getElementById('p-profile-view');
+    var formEl2 = document.getElementById('p-profile-form');
+    if (viewEl2) viewEl2.classList.add('hidden');
+    if (formEl2) formEl2.classList.remove('hidden');
+    var cntEl = document.getElementById('p-profile-count-notice');
+    if (cntEl) cntEl.textContent = '請填寫球員基本資料，填寫後最多可修改 3 次';
+  }
+}
+
+function showProfileForm() {
+  var s = G.session.student;
+  if (!s) return;
+  var remaining = 3 - (s.editCount || 0);
+  if (remaining <= 0) { alert('已達修改上限（3次），請聯繫行政修改'); return; }
+
+  var viewEl = document.getElementById('p-profile-view');
+  var formEl = document.getElementById('p-profile-form');
+  if (viewEl) viewEl.classList.add('hidden');
+  if (formEl) formEl.classList.remove('hidden');
+
+  // 預填現有資料
+  setVal('pf-id', s.idNumber || '');
+  setVal('pf-gender', s.gender || '');
+  setVal('pf-number', s.jersey || '');
+  setVal('pf-emergency', s.emergency || '');
+  setVal('pf-tel', s.emergencyTel || '');
+  setVal('pf-school', s.school || '');
+
+  var cntEl = document.getElementById('p-profile-count-notice');
+  if (cntEl) cntEl.textContent = '修改後剩餘次數：' + (remaining - 1) + ' 次';
+}
+
+function doSubmitProfile() {
+  var s = G.session.student;
+  if (!s) return;
+
+  var idNum = (document.getElementById('pf-id').value || '').trim().toUpperCase();
+  var gender = document.getElementById('pf-gender').value;
+  var emergency = (document.getElementById('pf-emergency').value || '').trim();
+  var tel = (document.getElementById('pf-tel').value || '').trim();
+  var school = (document.getElementById('pf-school').value || '').trim();
+
+  // 驗證必填
+  if (!idNum)      { alert('請填寫身分證字號'); return; }
+  if (!gender)     { alert('請選擇性別'); return; }
+  if (!emergency)  { alert('請填寫緊急聯絡人'); return; }
+  if (!tel)        { alert('請填寫緊急聯絡人電話'); return; }
+  if (!school)     { alert('請填寫就讀國小'); return; }
+
+  // 身分證格式驗證
+  if (!/^[A-Z][12][0-9]{8}$/.test(idNum)) { alert('身分證格式不正確（例：A123456789）'); return; }
+
+  loading(true);
+  api({
+    action: 'submitPlayerProfile',
+    studentName:  s.name,
+    idNumber:     idNum,
+    gender:       gender,
+    emergency:    emergency,
+    emergencyTel: tel,
+    school:       school
+  }, function(r) {
+    loading(false);
+    if (!r || !r.ok) { alert(r ? r.error : '儲存失敗'); return; }
+    showMsg('pf-ok');
+    loadStudentInfo(); // 重新載入，更新 editCount
+  });
+}
+
+// ── 教練：球員資料卡 ───────────────────────────────────────────
+function showPlayerCard(stu) {
+  setText('pc-avatar', stu.name[0]);
+  setText('pc-name', stu.name);
+
+  var groupBadge = document.getElementById('pc-group-badge');
+  if (groupBadge) {
+    groupBadge.innerHTML = (stu.groupType ? '<span class="badge ' + (stu.groupType === '競技' ? 'b-dark' : 'b-outline') + '">' + stu.groupType + '</span>' : '')
+      + (stu.grade ? ' <span class="badge b-gray">' + stu.grade + '</span>' : '');
+  }
+
+  var body = document.getElementById('pc-body');
+  if (!body) return;
+
+  if (!stu.hasProfile) {
+    body.innerHTML = '<div class="empty-state" style="padding:20px">球員資料尚未填寫</div>';
+  } else {
+    body.innerHTML = '<div class="card" style="padding:10px 14px">'
+      + '<div class="row-item"><div class="row-body"><div class="row-name">性別</div></div><span>' + (stu.gender||'—') + '</span></div>'
+      + '<div class="row-item"><div class="row-body"><div class="row-name">就讀國小</div></div><span class="txt-gray txt-small">' + (stu.school||'—') + '</span></div>'
+      + '<div class="row-item"><div class="row-body"><div class="row-name">身分證</div></div><span class="txt-gray txt-small">' + (stu.idMask||'—') + '</span></div>'
+      + '<div class="row-item"><div class="row-body"><div class="row-name">緊急聯絡人</div></div><span class="txt-gray txt-small">' + (stu.emergency||'—') + '</span></div>'
+      + '<div class="row-item"><div class="row-body"><div class="row-name">緊急聯絡電話</div></div>'
+      + '<a href="tel:' + (stu.emergencyTel||'') + '" style="color:var(--dark);font-weight:700">' + (stu.emergencyTel||'—') + '</a></div>'
+      + '</div>';
+  }
+  showModal('player-card-modal');
+}
+
 // ── 訂製品規格定義 ─────────────────────────────────────────────
 var CUSTOM_ITEMS = {
   '黑色球衣球褲':                           { hasTop: true, hasPants: true, hasNumber: true, hasName: false },
@@ -1895,6 +2096,9 @@ function renderParent(s) {
     // 若沒有班級選擇器，用第一個班
   }
 
+  // 球員資料頁
+  renderProfile(s);
+
   // 補課班別
   fillMakeupClassSelect(s);
   // 銀行資訊
@@ -2324,7 +2528,7 @@ function doSubmitOrder() {
   if (!items.length) { alert('請選擇至少一項配件'); return; }
   var total = items.reduce(function(sum, i) { return sum + i.qty * i.price; }, 0);
   loading(true);
-  api({ action: 'submitOrder', studentName: s ? s.name : '', buyer: document.getElementById('acc-buyer').value,
+  api({ action: 'submitOrder', studentName: s ? s.name : '', buyer: G.session.name || '',
         phone: document.getElementById('acc-phone').value, items: items, total: total,
         note: document.getElementById('acc-note').value }, function(r) {
     loading(false);
@@ -2582,6 +2786,9 @@ function startRoll() {
     row.className = 'roll-row'; row.id = 'rr-' + s.name;
     var av = document.createElement('div');
     av.className = 'roll-av'; av.id = 'ra-' + s.name; av.textContent = s.name[0];
+    av.title = '點擊查看球員資料';
+    av.style.cursor = 'pointer';
+    av.onclick = (function(stu){ return function(){ showPlayerCard(stu); }; })(s);
     var body = document.createElement('div');
     body.style.flex = '1';
     var nameDiv = document.createElement('div');
