@@ -1901,17 +1901,26 @@ function initApp() {
 }
 
 function fillClassSelects() {
-  var sels = ['tr-class', 'pa-makeup-class'];
-  sels.forEach(function(id) {
-    var sel = document.getElementById(id);
-    if (!sel) return;
-    while (sel.options.length > 1) sel.remove(1);
+  // 體驗預約：過濾額滿班級
+  var trSel = document.getElementById('tr-class');
+  if (trSel) {
+    while (trSel.options.length > 1) trSel.remove(1);
+    G.classes.filter(function(c){ return c.openTrial !== false; }).forEach(function(c) {
+      var o = document.createElement('option');
+      o.value = c.code; o.textContent = c.name;
+      trSel.appendChild(o);
+    });
+  }
+  // 補課：所有班級
+  var mkSel = document.getElementById('pa-makeup-class');
+  if (mkSel) {
+    while (mkSel.options.length > 1) mkSel.remove(1);
     G.classes.forEach(function(c) {
       var o = document.createElement('option');
       o.value = c.code; o.textContent = c.name;
-      sel.appendChild(o);
+      mkSel.appendChild(o);
     });
-  });
+  }
 }
 
 function fillBankInfo(containerId) {
