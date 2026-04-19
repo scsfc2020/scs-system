@@ -576,7 +576,9 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
     <div class="card">
       <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.6">完成匯款後請輸入帳號末五碼通知行政核對</div>
       <div id="acc-bank-info"></div>
-      <input class="five-inp" id="acc-five" type="text" maxlength="5" inputmode="numeric" placeholder="_ _ _ _ _" oninput="chkFive('acc')">
+      <div class="fg" style="margin-bottom:8px"><label class="fl">匯款金額</label><input class="fi" id="acc-amount" type="number" min="0" placeholder="請輸入匯款金額" oninput="chkAccPay()"></div>
+      <input class="five-inp" id="acc-five" type="text" maxlength="5" inputmode="numeric" placeholder="_ _ _ _ _" oninput="chkAccPay()">
+      <div style="font-size:11px;color:var(--gray);text-align:center;margin-top:4px">帳號末五碼</div>
       <div class="success" id="acc-pay-ok">已通知行政！</div>
       <button class="btn btn-dark mt12" id="acc-pay-btn" disabled onclick="doAccPayNotify()">通知行政已繳配件款</button>
     </div>
@@ -631,6 +633,10 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
       <div id="c-abs-notice" class="hidden">
         <div class="sec">行政已標記請假</div>
         <div class="card" style="border-color:#f5c2c7" id="c-abs-list"></div>
+      </div>
+      <div id="c-delivery-notice" class="hidden">
+        <div class="sec" style="color:var(--mid)">📦 待交貨配件（請交給學生）</div>
+        <div class="card" id="c-delivery-list"></div>
       </div>
       <div class="sec">正式學員點名</div>
       <div class="stats">
@@ -1012,6 +1018,31 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 
 
 <script>
+function doConfirmDeliveryEl(btn) {
+  doConfirmDelivery(btn.dataset.stu, btn.dataset.itm);
+}
+function doConfirmDelivery(studentName, itemName) {
+  if (!confirm('確認已將「' + itemName + '」交給 ' + studentName + '？')) return;
+  // 找到對應的訂單 rowIdx
+  loading(true);
+  api({ action: 'getOrders', shipStatus: '已出貨' }, function(r) {
+    loading(false);
+    if (!r || !r.ok) return;
+    var order = r.orders.find(function(o){
+      return o.student === studentName && o.coachConfirm !== '已確認';
+    });
+    if (!order) { alert('找不到對應訂單'); return; }
+    loading(true);
+    api({ action: 'updateOrderStatus', rowIdx: order.rowIdx, field: 'shipStatus', value: '已交貨' }, function(r2) {
+      loading(false);
+      if (r2 && r2.ok) {
+        // 重新載入點名頁
+        loadClassStudents();
+      }
+    });
+  });
+}
+
 // ── 家長：球員資料 ────────────────────────────────────────────
 function renderProfile(s) {
   var nameEl = document.getElementById('pf-name');
@@ -1463,14 +1494,19 @@ function loadInventory() {
       var isLow = item.stock <= item.safeStock;
       var card = document.createElement('div');
       card.className = 'card'; card.style.marginBottom = '10px';
+
+      // 庫存標題列
       card.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
         + '<div style="font-size:14px;font-weight:700">' + item.name + '</div>'
         + '<div style="font-size:24px;font-weight:800;color:' + (isLow ? 'var(--red)' : 'var(--dark)') + '">'
         + item.stock + ' <span style="font-size:12px;font-weight:400;color:var(--gray)">' + item.unit + '</span></div></div>'
-        + (isLow ? '<div class="notice notice-important" style="margin-bottom:8px;padding:6px 10px;font-size:11px">⚠️ 低於安全庫存（' + item.safeStock + ' ' + item.unit + '）</div>' : '')
+        + (isLow ? '<div class="notice" style="margin-bottom:8px;padding:6px 10px;font-size:11px;color:var(--red)">⚠️ 低於安全庫存（' + item.safeStock + ' ' + item.unit + '）</div>' : '')
         + (item.note ? '<div class="txt-small txt-gray" style="margin-bottom:8px">' + item.note + '</div>' : '');
+
+      // 操作按鈕
       var btns = document.createElement('div');
       btns.className = 'gap8';
+      btns.style.marginBottom = '10px';
       var b1 = document.createElement('button');
       b1.className = 'btn-sm btn-sm-dark'; b1.textContent = '＋ 進貨';
       b1.onclick = function() { openStockModal(item); };
@@ -1481,11 +1517,43 @@ function loadInventory() {
       b3.className = 'btn-sm btn-sm-red'; b3.textContent = '刪除';
       b3.onclick = function() {
         if (confirm('確定刪除「' + item.name + '」？')) {
-          api({ action: 'deleteInventoryItem', rowIdx: item.rowIdx }, function(r){ if(r&&r.ok) loadInventory(); });
+          api({ action: 'deleteInventoryItem', rowIdx: item.rowIdx }, function(rr){ if(rr&&rr.ok) loadInventory(); });
         }
       };
       btns.appendChild(b1); btns.appendChild(b2); btns.appendChild(b3);
       card.appendChild(btns);
+
+      // 訂單記錄（可展開）
+      var orders = item.orders || [];
+      if (orders.length) {
+        var toggle = document.createElement('button');
+        toggle.className = 'btn-sm btn-sm-outline';
+        toggle.textContent = '訂單記錄 (' + orders.length + ')';
+        var orderDiv = document.createElement('div');
+        orderDiv.style.display = 'none';
+        orderDiv.style.marginTop = '8px';
+        orderDiv.innerHTML = '<div style="font-size:11px;color:var(--gray);display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;gap:4px;padding:4px 0;font-weight:700;border-bottom:1px solid var(--pale)">'
+          + '<span>訂購人</span><span>日期</span><span>數量</span><span>出貨日</span><span>交貨日</span><span>狀態</span></div>'
+          + orders.map(function(o) {
+              var statusColor = o.coachConfirm === '已確認' ? 'var(--green)' : (o.shipStatus === '已出貨' ? 'var(--gold)' : 'var(--gray)');
+              var statusText  = o.coachConfirm === '已確認' ? '已交貨' : (o.shipStatus === '已出貨' ? '待交貨' : o.shipStatus);
+              return '<div style="font-size:11px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;gap:4px;padding:4px 0;border-bottom:1px solid var(--pale)">'
+                + '<span>' + o.student + '</span>'
+                + '<span>' + (o.time||'').slice(5,10) + '</span>'
+                + '<span>' + o.qty + '</span>'
+                + '<span>' + (o.shipDate||'—').slice(5,10) + '</span>'
+                + '<span>' + (o.deliverDate||'—').slice(5,10) + '</span>'
+                + '<span style="color:' + statusColor + ';font-weight:700">' + statusText + '</span>'
+                + '</div>';
+            }).join('');
+        toggle.onclick = function() {
+          var shown = orderDiv.style.display !== 'none';
+          orderDiv.style.display = shown ? 'none' : 'block';
+          this.textContent = shown ? '訂單記錄 (' + orders.length + ')' : '收合記錄';
+        };
+        card.appendChild(toggle);
+        card.appendChild(orderDiv);
+      }
       el.appendChild(card);
     });
   });
@@ -2177,8 +2245,9 @@ function renderParentFee(s) {
       + '<div id="p-fee-bank-info"></div>'
       + '</div>'
       + '<div class="card"><div class="card-title">通知已繳費</div>'
+      + '<div class="fg" style="margin-bottom:8px"><label class="fl">匯款金額</label><input class="fi" id="p-amount" type="number" min="0" placeholder="請輸入匯款金額" oninput="chkFive(this.dataset.prefix)" data-prefix="p"></div>'
       + '<input class="five-inp" id="p-five" type="text" maxlength="5" inputmode="numeric" placeholder="_ _ _ _ _" oninput="chkFive(this.dataset.prefix)" data-prefix="p">'
-      + '<div style="font-size:11px;color:var(--gray);text-align:center;margin-top:4px">請輸入匯款帳號末五碼</div>'
+      + '<div style="font-size:11px;color:var(--gray);text-align:center;margin-top:4px">匯款帳號末五碼</div>'
       + '<div class="success" id="p-pay-ok">已通知行政！請耐心等候確認</div>'
       + '<button class="btn btn-dark mt12" id="p-pay-btn" disabled onclick="doPayNotify()">通知行政已繳費</button>'
       + '</div>';
@@ -2383,27 +2452,41 @@ function doBookMakeup() {
 
 // 繳費通知
 function chkFive(prefix) {
-  var inp = document.getElementById(prefix + '-five');
-  if (!inp) return;
-  inp.value = inp.value.replace(/\D/g, '');
+  var five   = document.getElementById(prefix + '-five');
+  var amtEl  = document.getElementById(prefix + '-amount');
+  if (five) five.value = five.value.replace(/\D/g, '');
   var btn = document.getElementById(prefix + '-pay-btn');
-  if (btn) btn.disabled = inp.value.length !== 5;
+  if (!btn) return;
+  var fiveOk = five && five.value.length === 5;
+  var amtOk  = amtEl ? (parseInt(amtEl.value) > 0) : true; // 沒有金額欄就不擋
+  btn.disabled = !(fiveOk && amtOk);
 }
 function doPayNotify() {
-  var five = document.getElementById('p-five').value;
+  var five   = document.getElementById('p-five').value;
+  var amtEl  = document.getElementById('p-amount');
+  var amount = amtEl ? (parseInt(amtEl.value) || 0) : (G.session.student ? G.session.student.fee : 0);
   var s = G.session.student;
+  if (!amount) { alert('請填寫匯款金額'); return; }
   loading(true);
-  api({ action: 'payNotify', studentName: s.name, fiveDigits: five, amount: s.fee, type: '課程費' }, function(r) {
+  api({ action: 'payNotify', studentName: s.name, fiveDigits: five, amount: amount, type: '課程費' }, function(r) {
     loading(false);
     showMsg('p-pay-ok');
     document.getElementById('p-pay-btn').disabled = true;
   });
 }
+function chkAccPay() {
+  var five   = (document.getElementById('acc-five') || {}).value || '';
+  var amount = (document.getElementById('acc-amount') || {}).value || '';
+  var btn = document.getElementById('acc-pay-btn');
+  if (btn) btn.disabled = !(five.length === 5 && parseInt(amount) > 0);
+}
 function doAccPayNotify() {
-  var five = document.getElementById('acc-five').value;
+  var five   = document.getElementById('acc-five').value;
+  var amount = parseInt(document.getElementById('acc-amount').value) || 0;
   var s = G.session.student;
+  if (!amount) { alert('請填寫匯款金額'); return; }
   loading(true);
-  api({ action: 'accPayNotify', studentName: s.name, fiveDigits: five }, function(r) {
+  api({ action: 'accPayNotify', studentName: s.name, fiveDigits: five, amount: amount, type: '配件款' }, function(r) {
     loading(false);
     showMsg('acc-pay-ok');
     document.getElementById('acc-pay-btn').disabled = true;
@@ -2771,6 +2854,22 @@ function startRoll() {
         + '</div></div>';
     }).join('');
   } else if (absNotice) absNotice.classList.add('hidden');
+
+  // 待交貨配件
+  var delivNotice = document.getElementById('c-delivery-notice');
+  var delivListEl = document.getElementById('c-delivery-list');
+  var pendDelivs = (r.deliveries || []).filter(function(d){ return d.student; });
+  if (pendDelivs.length && delivListEl) {
+    if (delivNotice) delivNotice.classList.remove('hidden');
+    delivListEl.innerHTML = pendDelivs.map(function(d) {
+      return '<div class="row-item">'
+        + '<div class="row-av" style="background:var(--mid);font-size:11px">配</div>'
+        + '<div class="row-body"><div class="row-name">' + d.student + '</div>'
+        + '<div class="row-sub">' + d.items + '</div></div>'
+        +         + '<button class="btn-sm btn-sm-dark" data-stu="' + d.student + '" data-itm="' + d.items + '" onclick="doConfirmDeliveryEl(this)">確認交貨</button>'
+        + '</div>';
+    }).join('');
+  } else if (delivNotice) delivNotice.classList.add('hidden');
 
   // 點名表
   var absentNames = absT.map(function(a){ return a.name; });
@@ -3371,7 +3470,6 @@ r('DOMContentLoaded', function() {
   // 載入設定
   initApp();
 });
-
 
 </script>
 </body>
