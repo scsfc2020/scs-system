@@ -1039,40 +1039,90 @@ function renderParent(s) {
 
   // 期別進度卡
   showEl('p-period-card');
-  setText('p-period-label', s.groupType === '競技' ? '競技組・按月計費' : '本期課程・' + s.totalLessons + '堂');
-  setText('p-period-title', s.className);
-  var usedHours = s.attHours || 0;
-  var totalHours = s.totalHours || s.totalLessons;
-  var pct = totalHours > 0 ? Math.min(100, Math.round(usedHours / totalHours * 100)) : 0;
-  setText('p-period-prog-txt', '已上 ' + usedHours + ' / ' + totalHours + ' 小時');
-  setText('p-period-pct', pct + '%');
-  document.getElementById('p-period-bar').style.width = pct + '%';
+  var isComp = s.groupType === '競技';
 
-  // 統計
-  var remHours = Math.max(0, totalHours - usedHours);
-  setText('p-att', usedHours + 'h');
-  setText('p-rem', remHours + 'h');
-  setText('p-abs-cnt', s.absCredit || 0);
-  setText('p-reserved', (s.reservedHours || 0) + 'h');
+  if (isComp) {
+    // ── 競技組：顯示本月時數和費用 ──
+    var mHours    = s.thisMonthHours || 0;          // 實際已上
+    var mPlanned  = s.thisMonthPlannedHours || 0;   // 預定（行政填）
+    var mFee      = s.thisMonthFee || 0;            // 本月費用（預定時數算）
+    var mStr      = s.thisMonth || '';
+    var mLabel    = mStr.length >= 7 ? mStr.slice(0,4) + '年' + mStr.slice(5,7) + '月' : mStr;
 
-  // 保留時數提醒（競技組）
-  if (s.reservedHours > 0) {
-    showEl('p-reserved-notice');
-    setText('p-reserved-hrs', s.reservedHours + ' 小時');
-  }
+    // 進度卡
+    setText('p-period-label', '競技組・按月計費');
+    setText('p-period-title', mLabel + '　' + s.className);
+    setText('p-period-prog-txt', '本月已上 ' + mHours + ' / 預定 ' + mPlanned + ' 小時');
+    setText('p-period-pct', '本月費用 $' + mFee.toLocaleString());
+    var pb = document.getElementById('p-period-bar');
+    var mPct = mPlanned > 0 ? Math.min(100, Math.round(mHours / mPlanned * 100)) : 0;
+    if (pb) pb.style.width = mPct + '%';
 
-  // 進度條
-  setText('p-prog-txt', '已使用 ' + usedHours + ' / ' + totalHours + ' 小時');
-  setText('p-prog-pct', pct + '%');
-  var pb = document.getElementById('p-prog-bar');
-  if (pb) pb.style.width = pct + '%';
+    // 統計卡
+    setText('p-att', mHours + 'h');
+    setText('p-rem', '$' + mFee.toLocaleString());
+    setText('p-abs-cnt', s.absCredit || 0);
+    setText('p-reserved', (s.reservedHours || 0) + 'h');
 
-  // 警示
-  var warnEl = document.getElementById('p-warn');
-  if (warnEl) {
-    if (remHours === 0) { warnEl.classList.remove('hidden'); warnEl.textContent = '課程已用完！請聯繫行政辦理續費。'; }
-    else if (remHours <= (s.totalHours > 10 ? 2 : 1)) { warnEl.classList.remove('hidden'); warnEl.textContent = '課程僅剩 ' + remHours + ' 小時，請提前續費。'; }
-    else warnEl.classList.add('hidden');
+    // 統計卡標籤動態更新
+    var remLabel = document.getElementById('p-rem-label');
+    if (remLabel) remLabel.textContent = '本月費用';
+
+    // 進度條（下方卡片）
+    setText('p-prog-txt', '本月已上 ' + mHours + ' / 預定 ' + mPlanned + ' 小時');
+    setText('p-prog-pct', '費用 $' + mFee.toLocaleString());
+    var pb3 = document.getElementById('p-prog-bar');
+    if (pb3) pb3.style.width = mPct + '%';
+
+    // 保留時數提醒
+    if (s.reservedHours > 0) {
+      showEl('p-reserved-notice');
+      setText('p-reserved-hrs', s.reservedHours + ' 小時');
+    }
+
+    // 警示（競技組不顯示課程警示）
+    var warnEl = document.getElementById('p-warn');
+    if (warnEl) warnEl.classList.add('hidden');
+
+  } else {
+    // ── 一般組：顯示本期時數進度 ──
+    var usedHours = s.attHours || 0;
+    var totalHours = s.totalHours || s.totalLessons;
+    var pct = totalHours > 0 ? Math.min(100, Math.round(usedHours / totalHours * 100)) : 0;
+    var remHours = Math.max(0, totalHours - usedHours);
+
+    setText('p-period-label', '本期課程・' + s.totalLessons + '堂');
+    setText('p-period-title', s.className);
+    setText('p-period-prog-txt', '已上 ' + usedHours + ' / ' + totalHours + ' 小時');
+    setText('p-period-pct', pct + '%');
+    var pb2 = document.getElementById('p-period-bar');
+    if (pb2) pb2.style.width = pct + '%';
+
+    // 統計卡
+    setText('p-att', usedHours + 'h');
+    setText('p-rem', remHours + 'h');
+    setText('p-abs-cnt', s.absCredit || 0);
+    setText('p-reserved', (s.reservedHours || 0) + 'h');
+
+    // 進度條（下方）
+    setText('p-prog-txt', '已使用 ' + usedHours + ' / ' + totalHours + ' 小時');
+    setText('p-prog-pct', pct + '%');
+    var pb3 = document.getElementById('p-prog-bar');
+    if (pb3) pb3.style.width = pct + '%';
+
+    // 保留時數提醒
+    if (s.reservedHours > 0) {
+      showEl('p-reserved-notice');
+      setText('p-reserved-hrs', s.reservedHours + ' 小時');
+    }
+
+    // 警示
+    var warnEl = document.getElementById('p-warn');
+    if (warnEl) {
+      if (remHours === 0) { warnEl.classList.remove('hidden'); warnEl.textContent = '課程已用完！請聯繫行政辦理續費。'; }
+      else if (remHours <= 2) { warnEl.classList.remove('hidden'); warnEl.textContent = '課程僅剩 ' + remHours + ' 小時，請提前續費。'; }
+      else warnEl.classList.add('hidden');
+    }
   }
 
   // 折抵提示（一般組）
