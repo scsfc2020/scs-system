@@ -414,7 +414,7 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
     </div>
     <div class="stats">
       <div class="stat"><div class="stat-n" id="p-att">0</div><div class="stat-l">已使用</div></div>
-      <div class="stat"><div class="stat-n" id="p-rem">0</div><div class="stat-l">剩餘時</div></div>
+      <div class="stat"><div class="stat-n" id="p-rem">0</div><div class="stat-l" id="p-rem-label">剩餘時</div></div>
       <div class="stat"><div class="stat-n" id="p-abs-cnt">0</div><div class="stat-l">請假時</div></div>
       <div class="stat"><div class="stat-n" id="p-reserved">0</div><div class="stat-l">保留時</div></div>
     </div>
@@ -1053,20 +1053,17 @@ function renderParent(s) {
     setText('p-period-label', '競技組・按月計費');
     setText('p-period-title', mLabel + '　' + s.className);
     setText('p-period-prog-txt', '本月已上 ' + mHours + ' / 預定 ' + mPlanned + ' 小時');
-    setText('p-period-pct', '本月費用 $' + mFee.toLocaleString());
+    setText('p-period-pct', '本月費用 $' + mFee.toLocaleString() + '　剩餘 ' + Math.max(0, Math.round((mPlanned-mHours)*10)/10) + 'h');
     var pb = document.getElementById('p-period-bar');
     var mPct = mPlanned > 0 ? Math.min(100, Math.round(mHours / mPlanned * 100)) : 0;
     if (pb) pb.style.width = mPct + '%';
 
-    // 統計卡
+    // 統計卡（競技組）
+    var mRem = Math.max(0, Math.round((mPlanned - mHours) * 10) / 10);
     setText('p-att', mHours + 'h');
-    setText('p-rem', '$' + mFee.toLocaleString());
+    setText('p-rem', mRem + 'h');
     setText('p-abs-cnt', s.absCredit || 0);
     setText('p-reserved', (s.reservedHours || 0) + 'h');
-
-    // 統計卡標籤動態更新
-    var remLabel = document.getElementById('p-rem-label');
-    if (remLabel) remLabel.textContent = '本月費用';
 
     // 進度條（下方卡片）
     setText('p-prog-txt', '本月已上 ' + mHours + ' / 預定 ' + mPlanned + ' 小時');
