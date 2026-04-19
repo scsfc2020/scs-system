@@ -1018,6 +1018,27 @@ select.fi{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 
 
 <script>
+function doCompleteMatch(rowIdx, seq, opp, date) {
+  if (!confirm('確定標記「' + seq + ' vs ' + opp + '（' + fmtDateTW(date) + '）」為完賽？\n\n系統將自動：\n① 計入出賽學生出席時數\n② 處理請假補課\n③ 教練工時計入')) return;
+  loading(true);
+  api({ action: 'completeMatch', rowIdx: rowIdx, notifyFee: false }, function(r) {
+    loading(false);
+    if (!r || !r.ok) { alert(r ? r.error : '操作失敗'); return; }
+    alert('完賽處理完成！\n出賽 ' + r.players + ' 人 · ' + r.hours + ' 小時\n' + (r.perPerson ? '每人報名費 $' + r.perPerson : ''));
+    loadAdminMatches();
+  });
+}
+
+function doNotifyMatchFee(rowIdx, players, perPerson, seq, opp) {
+  if (!players || !players.length) { alert('尚無出賽名單'); return; }
+  if (!confirm('通知 ' + players.length + ' 位球員繳交報名費，每人 $' + perPerson + '？')) return;
+  loading(true);
+  api({ action: 'notifyMatchFee', players: players, perPerson: perPerson }, function(r) {
+    loading(false);
+    if (r && r.ok) alert('已通知 ' + players.length + ' 位球員繳費！');
+  });
+}
+
 function doConfirmDeliveryEl(btn) {
   doConfirmDelivery(btn.dataset.stu, btn.dataset.itm);
 }
@@ -2278,14 +2299,18 @@ function renderParentMatches(matches) {
       var loc   = encodeURIComponent(m.venue || '');
       calUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + title + '&dates=' + d + 'T' + String(eh).padStart(2,'0') + String(em).padStart(2,'0') + '00Z/' + d + 'T' + String(eh+2).padStart(2,'0') + String(em).padStart(2,'0') + '00Z&location=' + loc;
     }
+    var playerNames = m.players || [];
+    var isPlayer = playerNames.indexOf(s.name) >= 0 || playerNames.length === 0;
     return '<div class="match-card">'
-      + '<div class="match-head"><div class="match-date">' + m.date + ' &nbsp;<span class="badge b-gray" style="color:var(--light)">' + m.group + ' · ' + m.format + '</span></div>'
+      + '<div class="match-head"><div class="match-date">' + fmtDateTW(m.date) + ' &nbsp;<span class="badge b-gray" style="color:var(--light)">' + m.group + ' · ' + m.format + '</span>'
+      + (isPlayer ? ' <span class="badge b-green">出賽</span>' : '') + '</div>'
       + '<div class="match-vs">SCS vs ' + m.opp + '</div></div>'
       + '<div class="match-body">'
       + '<div class="match-row"><span class="match-row-label">集合</span><span class="match-row-val">' + m.gather + '</span></div>'
       + '<div class="match-row"><span class="match-row-label">比賽</span><span class="match-row-val">' + m.kickoff + '</span></div>'
       + '<div class="match-row"><span class="match-row-label">地點</span><span class="match-row-val">' + (m.venue || '待確認') + '</span></div>'
       + '<div class="match-row"><span class="match-row-label">球衣</span><span class="match-row-val">' + m.jersey + '</span></div>'
+      + (isPlayer && m.perPerson ? '<div class="match-row"><span class="match-row-label">報名費</span><span class="match-row-val" style="color:var(--red);font-weight:700">$' + m.perPerson + '（代收）</span></div>' : '')
       + '</div>'
       + '<div class="match-actions">'
       + (m.mapUrl ? '<a href="' + m.mapUrl + '" target="_blank"><button class="btn-sm btn-sm-dark">📍 地圖</button></a>' : '')
@@ -3256,17 +3281,51 @@ function loadAdminMatches() {
     loading(false);
     var el = document.getElementById('a-match-list');
     if (!r || !r.ok || !r.matches.length) { el.innerHTML = '<div class="empty-state">尚無比賽記錄</div>'; return; }
-    el.innerHTML = r.matches.map(function(m) {
-      return '<div class="card" style="margin-bottom:10px">'
-        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
-        + '<div><div style="font-size:14px;font-weight:700">' + m.date + ' vs ' + m.opp + '</div>'
-        + '<div class="txt-small txt-gray">' + m.group + ' · ' + m.format + ' · ' + m.gather + ' 集合</div></div>'
-        + '<span class="badge b-outline">' + m.seq + '</span></div>'
-        + '<div class="gap8">'
-        + '<button class="btn-sm btn-sm-outline" onclick="openMatchModal(' + m.rowIdx + ')">編輯</button>'
-        + '<button class="btn-sm btn-sm-red" onclick="doDeleteMatch(' + m.rowIdx + ')">刪除</button>'
-        + '</div></div>';
-    }).join('');
+    el.innerHTML = '';
+    r.matches.forEach(function(m) {
+      var statusColor = m.status === '已完賽' ? 'b-dark' : 'b-gold';
+      var playerCount = m.players ? m.players.length : 0;
+      var perPerson   = playerCount > 0 ? Math.round((m.fee || 0) / playerCount) : 0;
+      var card = document.createElement('div');
+      card.className = 'card'; card.style.marginBottom = '10px';
+      card.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
+        + '<div><div style="font-size:14px;font-weight:700">' + fmtDateTW(m.date) + ' vs ' + m.opp + '</div>'
+        + '<div class="txt-small txt-gray">' + m.group + ' · ' + m.format + ' · ' + m.gather + ' 集合</div>'
+        + '<div class="txt-small txt-gray">比賽時數：' + m.hours + 'h　出賽：' + playerCount + '人'
+        + (m.fee ? '　報名費：$' + m.fee + '（每人 $' + perPerson + '）' : '') + '</div></div>'
+        + '<span class="badge ' + statusColor + '">' + (m.status || '報名中') + '</span></div>';
+      // 出賽名單
+      if (playerCount) {
+        card.innerHTML += '<div class="txt-small txt-gray" style="margin-bottom:8px">出賽：' + m.players.join('、') + '</div>';
+      }
+      var btns = document.createElement('div');
+      btns.className = 'gap8';
+      // 編輯/刪除
+      var bEdit = document.createElement('button');
+      bEdit.className = 'btn-sm btn-sm-outline'; bEdit.textContent = '編輯';
+      bEdit.onclick = function() { openMatchModal(m.rowIdx); };
+      var bDel = document.createElement('button');
+      bDel.className = 'btn-sm btn-sm-red'; bDel.textContent = '刪除';
+      bDel.onclick = function() { doDeleteMatch(m.rowIdx); };
+      btns.appendChild(bEdit); btns.appendChild(bDel);
+      // 未完賽才顯示以下按鈕
+      if (m.status !== '已完賽') {
+        // 通知報名費
+        if (m.fee > 0 && playerCount > 0) {
+          var bFee = document.createElement('button');
+          bFee.className = 'btn-sm btn-sm-outline'; bFee.textContent = '通知報名費';
+          bFee.onclick = function() { doNotifyMatchFee(m.rowIdx, m.players, perPerson, m.seq, m.opp); };
+          btns.appendChild(bFee);
+        }
+        // 標記完賽
+        var bComplete = document.createElement('button');
+        bComplete.className = 'btn-sm btn-sm-dark'; bComplete.textContent = '標記完賽';
+        bComplete.onclick = function() { doCompleteMatch(m.rowIdx, m.seq, m.opp, m.date); };
+        btns.appendChild(bComplete);
+      }
+      card.appendChild(btns);
+      el.appendChild(card);
+    });
   });
 }
 
